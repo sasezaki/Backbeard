@@ -1,0 +1,15 @@
+{
+    "name":"sasezaki/backbeard",
+    "require": {
+        "zendframework/zend-http": "2.*",
+        "zendframework/zend-stdlib": "2.*",
+        "zendframework/zend-servicemanager": "2.*",
+        "zendframework/zend-mvc": "2.*",
+        "phly/mustache": "1.*"
+    },
+    "autoload": {
+        "psr-4":{
+            "Backbeard\\":"src/"
+        }
+    }
+}
