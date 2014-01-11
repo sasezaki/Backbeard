@@ -28,7 +28,7 @@ return call_user_func(function () {
 ##Install
 install application skeleton via composer
 
- - `php composer.phar create-project sasezaki/backbeard-skelton path/to/install`
+ - `php composer.phar create-project -s dev sasezaki/backbeard-skeleton path/to/install`
 
 ##Run
 with php built-in web server 
