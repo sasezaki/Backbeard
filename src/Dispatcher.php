@@ -1,5 +1,6 @@
 <?php
 namespace Backbeard;
+use Zend\Http\PhpEnvironment\Response as HttpResponse;
 use Zend\Mvc\Router\RouteMatch;
 use Zend\Mvc\Router\Http\Segment;
 use Zend\Stdlib\RequestInterface as Request;
@@ -26,10 +27,10 @@ class Dispatcher
         }
     }
 
-    public function dispatch(Request $request, Response $response)
+    public function dispatch(Request $request, Response $response = null)
     {
         $this->serviceLocator->setService('request', $request);
-        $this->serviceLocator->setService('response', $response);
+        $this->serviceLocator->setService('response', $response = ($response) ?: new HttpResponse());
 
         foreach ($this->routing as $route => $action) {
 
@@ -46,7 +47,12 @@ class Dispatcher
                 $actionResult = ($params) ? 
                     call_user_func_array($action, $params) : call_user_func($action, $routeResult);
 
-                return call_user_func($this->getActionResultHandler(), $routeResult, $actionResult, $response);
+                if ($actionResult === false) {
+                    continue;
+                }
+
+                return call_user_func(
+                        $this->getActionResultHandler(), $routeResult, $actionResult, $response);
             }
         }
 
