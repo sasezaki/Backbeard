@@ -8,7 +8,6 @@ use Backbeard\Dispatcher;
 use Backbeard\ValidationError;
 use Zend\Http\PhpEnvironment\Request;
 
-
 $routing = call_user_func(function () {
     $error = (yield ['method' => 'POST', 'route' => '/entry/:id'] => function ($id) {
         if ($this->get('request')->getPost('NAME') == 'wtf') {
@@ -21,7 +20,9 @@ $routing = call_user_func(function () {
     yield '/entry/:id' => function ($id) use ($error) {
         $message = $error ? current($error->getMessages()) :'';
         return "Hello $id ".$message.
-        '<form method="POST" action="/entry/'.$id.'">NAME<input type="text" name="NAME"></form>';
+        '<form method="POST" action="/entry/'.$id.'">'.
+            'NAME<input type="text" name="NAME">'.
+        '</form>';
     };
 
     yield function(Request $request) {
@@ -33,6 +34,7 @@ $routing = call_user_func(function () {
     };
 });
 
+(new Dispatcher($routing))->dispatch(new Request)->send();
 ```
 
 ##Install
