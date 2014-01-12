@@ -30,6 +30,11 @@ install application skeleton via composer
 
  - `php composer.phar create-project -s dev sasezaki/backbeard-skeleton path/to/install`
 
+https://github.com/sasezaki/BackbeardSkeleton/
+
 ##Run
 with php built-in web server 
  - `php -S localhost:8080 -t public/ public/index.php`
+
+#UnitTest
+`phpunit -c tests/phpunit.xml tests`
