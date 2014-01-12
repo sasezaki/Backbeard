@@ -4,15 +4,24 @@ Backbeard is yet another DSLish minimum oriented framework for PHP.
 
 ```php
 <?php
+use Backbeard\Dispatcher;
+use Backbeard\ValidationError;
 use Zend\Http\PhpEnvironment\Request;
 
-return call_user_func(function () {
-    yield '/hello/:foo' => function ($foo) {
-        return "Hello $foo";
-    };
 
-    yield ['method' => 'GET', 'route' => '/yeah/:foo/:bar'] => function ($foo, $bar) {
-        return ['var1' => 'baz'];
+$routing = call_user_func(function () {
+    $error = (yield ['method' => 'POST', 'route' => '/entry/:id'] => function ($id) {
+        if ($this->get('request')->getPost('NAME') == 'wtf') {
+            return ['var1' => 'baz']; // will be render entry.mustache
+        } else {
+            return new ValidationError(['error']);
+        }
+    });
+
+    yield '/entry/:id' => function ($id) use ($error) {
+        $message = $error ? current($error->getMessages()) :'';
+        return "Hello $id ".$message.
+        '<form method="POST" action="/entry/'.$id.'">NAME<input type="text" name="NAME"></form>';
     };
 
     yield function(Request $request) {
@@ -23,6 +32,7 @@ return call_user_func(function () {
         return $response;
     };
 });
+
 ```
 
 ##Install

@@ -1,5 +1,6 @@
 <?php
 namespace Backbeard;
+use Generator;
 use Zend\Http\PhpEnvironment\Response as HttpResponse;
 use Zend\Mvc\Router\RouteMatch;
 use Zend\Mvc\Router\Http\Segment;
@@ -14,7 +15,7 @@ class Dispatcher
     private $routing;
     private $serviceLocator;
 
-    public function __construct($routing, ServiceLocatorInterface $serviceLocator = null)
+    public function __construct(Generator $routing, ServiceLocatorInterface $serviceLocator = null)
     {
         $this->routing = $routing;
         $this->serviceLocator = ($serviceLocator) ?: new ServiceManager;
@@ -32,7 +33,9 @@ class Dispatcher
         $this->serviceLocator->setService('request', $request);
         $this->serviceLocator->setService('response', $response = ($response) ?: new HttpResponse());
 
-        foreach ($this->routing as $route => $action) {
+        while ($this->routing->valid()) {
+            $route = $this->routing->key();
+            $action = $this->routing->current();
 
             $router = is_callable($route) ? $route : $this->getTypeRouter($route);
 
@@ -48,12 +51,17 @@ class Dispatcher
                     call_user_func_array($action, $params) : call_user_func($action, $routeResult);
 
                 if ($actionResult === false) {
+                    $this->routing->next();
+                    continue;
+                } elseif ($actionResult instanceof ActionContinueInterface) {
+                    $this->routing->send($actionResult);
                     continue;
                 }
 
                 return call_user_func(
                         $this->getActionResultHandler(), $routeResult, $actionResult, $response);
             }
+            $this->routing->next();
         }
 
         return $response;
