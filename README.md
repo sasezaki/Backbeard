@@ -9,6 +9,10 @@ use Backbeard\ValidationError;
 use Zend\Http\PhpEnvironment\Request;
 
 $routing = call_user_func(function () {
+    yield '/hello/:foo' => function ($foo) {
+        return "Hello $foo";
+    };
+
     $error = (yield ['method' => 'POST', 'route' => '/entry/:id'] => function ($id) {
         if ($this->get('request')->getPost('NAME') == 'wtf') {
             return ['var1' => 'baz']; // will be render entry.mustache
