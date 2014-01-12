@@ -1,0 +1,12 @@
+<phpunit bootstrap="./Bootstrap.php" colors="true">
+    
+    <testsuite name="Backbeard Test Suite">
+     <directory>./</directory>
+    </testsuite>
+
+    <filter>
+        <whitelist>
+            <directory suffix=".php">../src</directory>
+        </whitelist>
+    </filter>
+</phpunit>
