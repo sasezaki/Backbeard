@@ -79,7 +79,27 @@ class DispatcherTest extends \PHPUnit_Framework_TestCase
         })))->dispatch($request);
     }
 
-    public function testActionReturn()
+    public function testActionResultHandlerShouldReturnResponse()
+    {
+        $request = new \Zend\Http\PhpEnvironment\Request;
+        $request->setUri('/test');
+        $response = (new Dispatcher(call_user_func(function() {
+            yield ['route' => '/test'] => function () {
+                $this->get('view')->setTemplatePath(__DIR__.'/_files/views');
+                return ['key' => 'var'];
+            };
+        })))->dispatch($request);
+        $this->assertInstanceof('Zend\Stdlib\ResponseInterface', $response);
+
+        $request = new \Zend\Http\PhpEnvironment\Request;
+        $request->setUri('/test');
+        $response = (new Dispatcher(call_user_func(function() {
+            yield ['route' => '/test'] => function () {return $this->get('response');};
+        })))->dispatch($request);
+        $this->assertInstanceof('Zend\Stdlib\ResponseInterface', $response);
+    }
+
+    public function testContinueWhenActionReturnIsFalse()
     {
         $request = new \Zend\Http\PhpEnvironment\Request;
         $request->setUri('/');
@@ -90,7 +110,7 @@ class DispatcherTest extends \PHPUnit_Framework_TestCase
         $this->assertSame('not match', $response->getContent());
     }
     
-    public function testActionContinue()
+    public function testContinueWhenActionReturnHasActionContinueInterface()
     {
         $request = new \Zend\Http\PhpEnvironment\Request;
         $request->setUri('/');
