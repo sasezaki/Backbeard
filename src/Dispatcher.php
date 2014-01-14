@@ -105,7 +105,7 @@ class Dispatcher
                 };
                 break;
             default:
-                throw new \Exception;
+                throw new \InvalidArgumentException('Invalid router key type is passed');
         }
     }
 
