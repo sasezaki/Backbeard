@@ -59,6 +59,15 @@ class DispatcherTest extends \PHPUnit_Framework_TestCase
         $this->assertSame('bar', $dispatcher->dispatch($request)->getContent());
     }
 
+    public function testRoutingKeyHandlingClosure()
+    {
+        $request = new \Zend\Http\PhpEnvironment\Request;
+        $response = (new Dispatcher(call_user_func(function() {
+            yield function(){return true;} => function(){return 'bar';};
+        })))->dispatch($request);
+        $this->assertSame('bar', $response->getContent());
+    }
+
     public function testActionReturn()
     {
         $request = new \Zend\Http\PhpEnvironment\Request;
