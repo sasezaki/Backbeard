@@ -6,11 +6,9 @@ before_script:
 
 php:
   - 5.5
-  - hhvm
 
-script: phpunit -c tests/phpunit.xml
+script:
+  - ./vendor/bin/phpunit --coverage-clover ./build/logs/clover.xml
 
-matrix:
-  fast_finish: true
-  allow_failures:
-    - php: hhvm
+after_script:
+  - php vendor/bin/coveralls -v
