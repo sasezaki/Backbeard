@@ -23,8 +23,9 @@ class Dispatcher
             $this->serviceLocator->setFactory('view', function () {
                 $mustache = new Mustache;
                 $mustache->setTemplatePath(getcwd());
+
                 return $mustache;
-            }); 
+            });
         }
     }
 
@@ -47,7 +48,7 @@ class Dispatcher
                 } elseif (is_array($routeResult)) {
                     $params = $routeResult;
                 }
-                $actionResult = ($params) ? 
+                $actionResult = ($params) ?
                     call_user_func_array($action, $params) : call_user_func($action, $routeResult);
 
                 if ($actionResult === false) {
@@ -79,6 +80,7 @@ class Dispatcher
                         $parts->setAccessible(true);
                         $match->setMatchedRouteName(trim($parts->getValue($segment)[0][1], '/'));
                     }
+
                     return $match;
                 };
                 break;
@@ -98,6 +100,7 @@ class Dispatcher
                         $parts->setAccessible(true);
                         $match->setMatchedRouteName(trim($parts->getValue($segment)[0][1], '/'));
                     }
+
                     return $match;
                 };
                 break;
@@ -111,12 +114,14 @@ class Dispatcher
         return function ($routeResult, $actionResult, $response) {
             if (is_string($actionResult)) {
                 $response->setContent($actionResult);
+
                 return $response;
             } elseif (is_array($actionResult)) {
                 $view = $this->serviceLocator->get('view');
                 if ($routeResult instanceof RouteMatch) {
                     $response->setContent($view->render($routeResult->getMatchedRouteName(), $actionResult));
                 }
+
                 return $response;
             } elseif ($actionResult instanceof Response) {
                 return $actionResult;
