@@ -68,6 +68,17 @@ class DispatcherTest extends \PHPUnit_Framework_TestCase
         $this->assertSame('bar', $response->getContent());
     }
 
+    /**
+     * @expectedException InvalidArgumentException
+     */
+    public function testRoutingKeyHandlingUnexpected()
+    {
+        $request = new \Zend\Http\PhpEnvironment\Request;
+        $response = (new Dispatcher(call_user_func(function() {
+            yield null => function(){return 'bar';};
+        })))->dispatch($request);
+    }
+
     public function testActionReturn()
     {
         $request = new \Zend\Http\PhpEnvironment\Request;
