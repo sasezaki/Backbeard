@@ -14,7 +14,7 @@ class DispatcherTest extends \PHPUnit_Framework_TestCase
         $this->assertInstanceof('Zend\Stdlib\ResponseInterface', $dispatcher->dispatch($request));
     }
 
-    public function testRoutingKeyHandlingString()
+    public function testRoutingKeyHandleString()
     {
         $request = $this->getMock('\Zend\Stdlib\RequestInterface');
         $response = (new Dispatcher(call_user_func(function() {
@@ -37,7 +37,7 @@ class DispatcherTest extends \PHPUnit_Framework_TestCase
         $this->assertSame('bar', $response->getContent());
     }
 
-    public function testRoutingKeyHandlingArray()
+    public function testRoutingKeyHandleArray()
     {
         $request = new \Zend\Http\PhpEnvironment\Request;
         $request->setUri('/foo/bar');
@@ -59,7 +59,7 @@ class DispatcherTest extends \PHPUnit_Framework_TestCase
         $this->assertSame('bar', $dispatcher->dispatch($request)->getContent());
     }
 
-    public function testRoutingKeyHandlingClosure()
+    public function testRoutingKeyHandleClosure()
     {
         $request = new \Zend\Http\PhpEnvironment\Request;
         $response = (new Dispatcher(call_user_func(function() {
@@ -68,10 +68,20 @@ class DispatcherTest extends \PHPUnit_Framework_TestCase
         $this->assertSame('bar', $response->getContent());
     }
 
+
+    public function testRouterResultArrayShouldPassAction()
+    {
+        $request = new \Zend\Http\PhpEnvironment\Request;
+        $response = (new Dispatcher(call_user_func(function() {
+            yield function(){return ['var1', 'var2'];} => function($var1, $var2){return $var1.$var2;};
+        })))->dispatch($request);
+        $this->assertSame('var1var2', $response->getContent());
+    }
+
     /**
      * @expectedException InvalidArgumentException
      */
-    public function testRoutingKeyHandlingUnexpected()
+    public function testRoutingKeyHandleUnexpected()
     {
         $request = new \Zend\Http\PhpEnvironment\Request;
         $response = (new Dispatcher(call_user_func(function() {
