@@ -2,6 +2,9 @@
 
 Backbeard is yet another DSLish minimum oriented framework for PHP.
 
+[![Build Status](https://travis-ci.org/sasezaki/Backbeard.png?branch=master)](https://travis-ci.org/sasezaki/Backbeard)
+[![Coverage Status](https://coveralls.io/repos/sasezaki/Backbeard/badge.png)](https://coveralls.io/r/sasezaki/Backbeard)
+
 ![backbeard](http://gyazo.com/44a5c43a817927032d6f5ff0ed8cda74.png)
 
 
