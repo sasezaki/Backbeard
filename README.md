@@ -1,4 +1,5 @@
-#Backbeard
+Backbeard
+==========
 
 Backbeard is yet another DSLish minimum oriented framework for PHP.
 
@@ -7,6 +8,7 @@ Backbeard is yet another DSLish minimum oriented framework for PHP.
 
 ![backbeard](http://gyazo.com/44a5c43a817927032d6f5ff0ed8cda74.png)
 
+## Usage
 
 ```php
 <?php
@@ -47,16 +49,17 @@ $routing = call_user_func(function () {
 (new Dispatcher($routing))->dispatch(new Request)->send();
 ```
 
-##Install
-install application skeleton via composer
+## Install 
+There is several way.
+
+### Just use as component 
+ - `php composer.phar require sasezaki/backbeard dev-master`
+
+### Use Application Skeleton
+https://github.com/sasezaki/BackbeardSkeleton/
 
  - `php composer.phar create-project -s dev sasezaki/backbeard-skeleton path/to/install`
 
-https://github.com/sasezaki/BackbeardSkeleton/
-
-##Run
-with php built-in web server 
+    When install finished, you can try running with php built-in web server 
  - `php -S localhost:8080 -t public/ public/index.php`
 
-##UnitTest
-`phpunit -c tests/phpunit.xml tests`
