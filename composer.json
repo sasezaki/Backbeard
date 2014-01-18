@@ -2,6 +2,15 @@
     "name":"sasezaki/backbeard",
     "description":"yet another DSLish minimum oriented framework for PHP",
     "license": "BSD-3-Clause",
+    "keywords": ["microframework", "zf2"],
+    "authors": [
+        {
+            "name": "sasezaki",
+            "email": "sasezaki@gmail.com",
+            "homepage": "http://github.com/sasezaki",
+            "role": "Developer"
+        }
+    ],
     "repositories": [
         {
             "type": "composer",
