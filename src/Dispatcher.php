@@ -38,7 +38,7 @@ class Dispatcher
             $route = $this->routing->key();
             $action = $this->routing->current();
 
-            $router = is_callable($route) ? $route : $this->getTypeRouter($route);
+            $router = is_callable($route) ? $route : $this->getRouterByType($route);
 
             if ($routeResult = $router($request)) {
                 $action = $action->bindTo($this->serviceLocator);
@@ -68,7 +68,7 @@ class Dispatcher
         return $response;
     }
 
-    public function getTypeRouter($route)
+    public function getRouterByType($route)
     {
         switch (gettype($route)) {
             case 'string':
@@ -105,7 +105,7 @@ class Dispatcher
                 };
                 break;
             default:
-                throw new \InvalidArgumentException('Invalid router key type is passed');
+                throw new \InvalidArgumentException('Invalid router type is passed');
         }
     }
 
