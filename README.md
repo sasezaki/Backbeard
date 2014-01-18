@@ -66,3 +66,7 @@ https://github.com/sasezaki/BackbeardSkeleton/
     When install finished, you can try running with php built-in web server 
  - `php -S localhost:8080 -t public/ public/index.php`
 
+## NOTES
+THIS PROJECT IS A PROOF OF CONCEPT FOR GENERATOR BASED ROUTER,
+AND NOT INTENDED FOR PRODUCTION USE.
+PLEASE USE AT YOUR OWN RISK.
