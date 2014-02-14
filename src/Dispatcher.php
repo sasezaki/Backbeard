@@ -8,7 +8,11 @@ use Zend\Stdlib\RequestInterface as Request;
 use Zend\Stdlib\ResponseInterface as Response;
 use Zend\ServiceManager\ServiceManager;
 use Zend\ServiceManager\ServiceLocatorInterface;
-use Phly\Mustache\Mustache;
+use Zend\View\View;
+use Zend\View\Renderer\PhpRenderer;
+use Zend\View\Resolver\TemplatePathStack;
+use Zend\View\Strategy\PhpRendererStrategy;
+use Zend\View\Model\ViewModel;
 
 class Dispatcher
 {
@@ -21,10 +25,14 @@ class Dispatcher
         $this->serviceLocator = ($serviceLocator) ?: new ServiceManager;
         if (!$this->serviceLocator->has('view')) {
             $this->serviceLocator->setFactory('view', function () {
-                $mustache = new Mustache;
-                $mustache->setTemplatePath(getcwd());
+                $view = new View;
+                $renderer = new PhpRenderer();
+                $resolver = new TemplatePathStack;
+                $resolver->setPaths([getcwd()]);
+                $renderer->setResolver($resolver);
 
-                return $mustache;
+                $view->getEventManager()->attach(new PhpRendererStrategy($renderer));
+                return $view;
             });
         }
     }
@@ -116,10 +124,16 @@ class Dispatcher
                 $response->setContent($actionResult);
 
                 return $response;
-            } elseif (is_array($actionResult)) {
+            } elseif (is_array($actionResult) || $actionResult instanceof ViewModel) {
                 $view = $this->serviceLocator->get('view');
+                $view->setResponse($response);
                 if ($routeResult instanceof RouteMatch) {
-                    $response->setContent($view->render($routeResult->getMatchedRouteName(), $actionResult));
+                    $viewModel = ($actionResult instanceof ViewModel) 
+                        ? $actionResult : new ViewModel($actionResult);
+                    if (!$viewModel->getTemplate()) {
+                        $viewModel->setTemplate($routeResult->getMatchedRouteName());
+                    }
+                    $view->render($viewModel);
                 }
 
                 return $response;

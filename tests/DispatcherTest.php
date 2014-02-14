@@ -5,8 +5,35 @@ use Backbeard\ValidationError;
 use Zend\Stdlib\ReqeuestInterface as Request;
 use Zend\Stdlib\ResponseInterface as Response;
 
+use Zend\View\View;
+use Zend\View\Renderer\PhpRenderer;
+use Zend\View\Resolver\TemplatePathStack;
+use Zend\View\Strategy\PhpRendererStrategy;
+use Zend\View\Model\ViewModel;
+
+use Zend\ServiceManager\ServiceManager;
+
 class DispatcherTest extends \PHPUnit_Framework_TestCase
 {
+    private $serviceLocator;
+
+    public function setUp()
+    {
+        $sm = new ServiceManager;
+        $sm->setFactory('view', function () {
+            $view = new View;
+            $renderer = new PhpRenderer();
+            $resolver = new TemplatePathStack;
+            $resolver->setPaths([__DIR__.'/_files/views/']);
+            $renderer->setResolver($resolver);
+
+            $view->getEventManager()->attach(new PhpRendererStrategy($renderer));
+            return $view;
+        });
+
+        $this->serviceLocator = $sm;
+    }
+
     public function testDispatcherShouldBeZF2DispatcherCompatible()
     {
         $request = $this->getMock('Zend\Stdlib\RequestInterface');
@@ -68,7 +95,6 @@ class DispatcherTest extends \PHPUnit_Framework_TestCase
         $this->assertSame('bar', $response->getContent());
     }
 
-
     public function testRouterResultArrayShouldPassAction()
     {
         $request = new \Zend\Http\PhpEnvironment\Request;
@@ -93,12 +119,13 @@ class DispatcherTest extends \PHPUnit_Framework_TestCase
     {
         $request = new \Zend\Http\PhpEnvironment\Request;
         $request->setUri('/test');
-        $response = (new Dispatcher(call_user_func(function() {
+        $dispatcher = new Dispatcher(call_user_func(function() {
             yield ['route' => '/test'] => function () {
-                $this->get('view')->setTemplatePath(__DIR__.'/_files/views');
-                return ['key' => 'var'];
+                return new \Zend\View\Model\ViewModel(['key' => 'var']);
             };
-        })))->dispatch($request);
+        }), $this->serviceLocator);
+
+        $response = $dispatcher->dispatch($request);
         $this->assertInstanceof('Zend\Stdlib\ResponseInterface', $response);
 
         $request = new \Zend\Http\PhpEnvironment\Request;
