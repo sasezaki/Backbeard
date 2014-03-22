@@ -41,7 +41,7 @@ class DispatcherTest extends \PHPUnit_Framework_TestCase
         $this->assertInstanceof('Zend\Stdlib\ResponseInterface', $dispatcher->dispatch($request));
     }
 
-    public function testRoutingKeyHandleString()
+    public function testRoutingKeyHandleStringAsPath()
     {
         $request = $this->getMock('\Zend\Stdlib\RequestInterface');
         $response = (new Dispatcher(call_user_func(function() {
@@ -64,7 +64,7 @@ class DispatcherTest extends \PHPUnit_Framework_TestCase
         $this->assertSame('bar', $response->getContent());
     }
 
-    public function testRoutingKeyHandleArray()
+    public function testRoutingKeyHandleArrayAsRequestContext()
     {
         $request = new \Zend\Http\PhpEnvironment\Request;
         $request->setUri('/foo/bar');
@@ -86,7 +86,7 @@ class DispatcherTest extends \PHPUnit_Framework_TestCase
         $this->assertSame('bar', $dispatcher->dispatch($request)->getContent());
     }
 
-    public function testRoutingKeyHandleClosure()
+    public function testRoutingKeyHandleClosureAsMatcher()
     {
         $request = new \Zend\Http\PhpEnvironment\Request;
         $response = (new Dispatcher(call_user_func(function() {
@@ -121,7 +121,7 @@ class DispatcherTest extends \PHPUnit_Framework_TestCase
         $request->setUri('/test');
         $dispatcher = new Dispatcher(call_user_func(function() {
             yield ['route' => '/test'] => function () {
-                return new \Zend\View\Model\ViewModel(['key' => 'var']);
+                return new ViewModel(['key' => 'var']);
             };
         }), $this->serviceLocator);
 
@@ -159,7 +159,7 @@ class DispatcherTest extends \PHPUnit_Framework_TestCase
         $this->assertSame('bar', $response->getContent());
     }
 
-    public function testValidationError()
+    public function testValidationErrorShouldContinueRoutingAndHasError()
     {
         $request = new \Zend\Http\PhpEnvironment\Request;
         $request->setUri('/entry');
