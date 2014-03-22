@@ -26,7 +26,7 @@ $routing = call_user_func(function () {
 
     $error = (yield ['method' => 'POST', 'route' => '/entry/:id'] => function ($id) {
         if ($this->get('request')->getPost('NAME') == 'wtf') {
-            return ['var1' => 'baz']; // will be render entry.mustache
+            return ['var1' => 'baz']; // will be render entry.phtml
         } else {
             return new ValidationError(['error']);
         }
