@@ -18,6 +18,7 @@
         }
     ],
     "require": {
+        "php": ">=5.5.0",
         "zendframework/zend-http": "2.*",
         "zendframework/zend-stdlib": "2.*",
         "zendframework/zend-servicemanager": "2.*",
