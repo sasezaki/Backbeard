@@ -55,10 +55,10 @@ $routing = call_user_func(function () {
 ## Install 
 There is several way.
 
-### Just use as component 
+### Using as component 
  - `php composer.phar require sasezaki/backbeard dev-master`
 
-### Use Application Skeleton
+### Useing Application Skeleton
 https://github.com/sasezaki/BackbeardSkeleton/
 
  - `php composer.phar create-project -s dev sasezaki/backbeard-skeleton path/to/install`
