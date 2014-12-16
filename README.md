@@ -58,7 +58,7 @@ There is several way.
 ### Using as component 
  - `php composer.phar require sasezaki/backbeard dev-master`
 
-### Useing Application Skeleton
+### Using Application Skeleton
 https://github.com/sasezaki/BackbeardSkeleton/
 
  - `php composer.phar create-project -s dev sasezaki/backbeard-skeleton path/to/install`
