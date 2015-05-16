@@ -183,6 +183,7 @@ class DispatcherTest extends \PHPUnit_Framework_TestCase
         }), $this->view, $this->router);
         $response = $dispatcher->dispatch($request, $response);
         $this->assertInstanceof(ResponseInterface::class, $response);
+        $this->assertSame('var', (string)$response->getBody());
     }
 
     public function testContinueWhenActionReturnIsFalse()

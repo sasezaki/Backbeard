@@ -117,13 +117,10 @@ class Dispatcher
 
             $view = $this->view;
             $view->assign($actionResult);
+
+            $body = $view->render($template, $response->getBody());
             
-            $body = $response->getBody();
-            $stream = $body->detach();
-            $view->render($template, $stream);
-            
-            $body->attach($stream);            
-            return $response;
+            return $response->withBody($body);
         } elseif ($actionResult instanceof Response) {
             return $actionResult;
         } elseif (is_int($actionResult)) {
