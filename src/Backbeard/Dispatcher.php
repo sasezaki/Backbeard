@@ -78,7 +78,7 @@ class Dispatcher
             $this->routing->next();
         }
         
-        return $response;
+        return false;
     }
     
     /**

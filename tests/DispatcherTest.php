@@ -26,17 +26,16 @@ class DispatcherTest extends \PHPUnit_Framework_TestCase
         $this->router = new Router(new \FastRoute\RouteParser\Std);
     }
     
-    public function testActionResultHandlerShouldReturnResponse()
+    public function testReturnFalseWhenNotMatched()
     {
         $request = ServerRequestFactory::fromGlobals();
         $response = new Response();
         $dispatcher = new Dispatcher(call_user_func(function() {
-            yield '/' => function () {return true;};
+            yield function () {return false;} => function () {};
         }), $this->view, $this->router);
         $response = $dispatcher->dispatch($request, $response);
-        $this->assertInstanceof(ResponseInterface::class, $response);
+        $this->assertFalse($response);
     }
-    
     
     public function testRoutingStringHandleAsRoute()
     {
