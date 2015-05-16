@@ -9,10 +9,7 @@ use Phly\Http\Stream;
 class View extends BaseView implements ViewInterface
 {
     /**
-     * @param string $template
-     * @param resource|StreamInterface $stream 
-     * 
-     * @see \SfpStreamView\View::render()
+     * {@inheritdoc}
      */
     public function render($template, $stream = null)
     {
