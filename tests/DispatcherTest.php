@@ -43,7 +43,7 @@ class DispatcherTest extends \PHPUnit_Framework_TestCase
     
     public function testRoutingStringHandleAsRoute()
     {
-        $request = ServerRequestFactory::fromGlobals()->withUri(new Uri('/foo/5'));
+        $request = ServerRequestFactory::fromGlobals()->withUri(new Uri('http://example.com/foo/5'));
         $response = new Response();
     
         $routing = call_user_func(function() {
@@ -54,9 +54,10 @@ class DispatcherTest extends \PHPUnit_Framework_TestCase
 
         $dispatcher = new Dispatcher($routing, $this->view, $this->router);
 
-        $dispatcher->dispatch($request, $response);
+        $result = $dispatcher->dispatch($request, $response);
+        
+        $this->assertTrue($result);
         $response = $dispatcher->getActionResponse();
-
         $this->assertInstanceof(Response::class, $response);
         $this->assertSame('5', (string)$response->getBody());
     }

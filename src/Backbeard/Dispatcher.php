@@ -117,11 +117,11 @@ class Dispatcher
         return $this->templatePathResolver;
     }
 
-    protected function dispatchByType($route, $request)
+    protected function dispatchByType($route, Request $request)
     {
         switch (gettype($route)) {
             case 'string':
-                return $this->router->match($route, (string)$request->getUri());
+                return $this->router->match($route, $request->getUri()->getPath());
                 break;
             case 'array':
                 // todo implements
