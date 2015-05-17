@@ -33,8 +33,8 @@ class DispatcherTest extends \PHPUnit_Framework_TestCase
         $dispatcher = new Dispatcher(call_user_func(function() {
             yield function () {return false;} => function () {};
         }), $this->view, $this->router);
-        $response = $dispatcher->dispatch($request, $response);
-        $this->assertFalse($response);
+        $result = $dispatcher->dispatch($request, $response);
+        $this->assertFalse($result);
     }
     
     public function testRoutingStringHandleAsRoute()
@@ -50,10 +50,11 @@ class DispatcherTest extends \PHPUnit_Framework_TestCase
 
         $dispatcher = new Dispatcher($routing, $this->view, $this->router);
 
-        $res = $dispatcher->dispatch($request, $response);
+        $dispatcher->dispatch($request, $response);
+        $response = $dispatcher->getActionResponse();
 
-        $this->assertInstanceof(Response::class, $res);
-        $this->assertSame('5', (string)$res->getBody());
+        $this->assertInstanceof(Response::class, $response);
+        $this->assertSame('5', (string)$response->getBody());
     }
     
 //     public function testRoutingKeyHandleStringAsPath()
@@ -103,9 +104,13 @@ class DispatcherTest extends \PHPUnit_Framework_TestCase
     {
         $request = ServerRequestFactory::fromGlobals();
         $response = new Response();
-        $response = (new Dispatcher(call_user_func(function() {
+        
+        $dispatcher = new Dispatcher(call_user_func(function() {
             yield function(){return true;} => function(){return 'bar';};
-        }), $this->view, $this->router))->dispatch($request, $response);
+        }), $this->view, $this->router);
+        $result = $dispatcher->dispatch($request, $response);
+        $response = $dispatcher->getActionResponse();
+        
         $this->assertSame('bar', (string)$response->getBody());
     }
 
@@ -114,9 +119,11 @@ class DispatcherTest extends \PHPUnit_Framework_TestCase
         $request = ServerRequestFactory::fromGlobals();
         $response = new Response();
                 
-        $response = (new Dispatcher(call_user_func(function() {
+        $dispatcher = new Dispatcher(call_user_func(function() {
             yield function(){return ['var1', 'var2'];} => function($var1, $var2){return $var1.$var2;};
-        }), $this->view, $this->router))->dispatch($request, $response);
+        }), $this->view, $this->router);
+        $result = $dispatcher->dispatch($request, $response);
+        $response = $dispatcher->getActionResponse();
         $this->assertSame('var1var2', (string)$response->getBody());
     }
     
@@ -125,9 +132,11 @@ class DispatcherTest extends \PHPUnit_Framework_TestCase
         $request = ServerRequestFactory::fromGlobals();
         $response = new Response();
     
-        $response = (new Dispatcher(call_user_func(function() {
+        $dispatcher = new Dispatcher(call_user_func(function() {
             yield function(){return new RouteMatch(['var1', 'var2']);} => function($var1, $var2){return $var1.$var2;};
-        }), $this->view, $this->router))->dispatch($request, $response);
+        }), $this->view, $this->router);
+        $result = $dispatcher->dispatch($request, $response);
+        $response = $dispatcher->getActionResponse();
         $this->assertSame('var1var2', (string)$response->getBody());
     }
         
@@ -138,6 +147,7 @@ class DispatcherTest extends \PHPUnit_Framework_TestCase
     {
         $request = ServerRequestFactory::fromGlobals();
         $response = new Response();
+        
         (new Dispatcher(call_user_func(function() {
             yield null => function(){return 'bar';};
         }), $this->view, $this->router))->dispatch($request, $response);
@@ -147,13 +157,15 @@ class DispatcherTest extends \PHPUnit_Framework_TestCase
     {
         $request = ServerRequestFactory::fromGlobals();
         $response = new Response();
-        $response2 = (new Dispatcher(call_user_func(function() {
+        
+        $dispatcher = new Dispatcher(call_user_func(function() {
             yield function(){return true;} => function(){
                 $response_new = new Response();
                 return $response_new;
             };
-        }), $this->view, $this->router))->dispatch($request, $response);
-        
+        }), $this->view, $this->router);
+        $result = $dispatcher->dispatch($request, $response);
+        $response2 = $dispatcher->getActionResponse();
         $this->assertNotSame(spl_object_hash($response), spl_object_hash($response2));
     }
     
@@ -161,13 +173,15 @@ class DispatcherTest extends \PHPUnit_Framework_TestCase
     {
         $request = ServerRequestFactory::fromGlobals();
         $response = new Response();
-        $response = (new Dispatcher(call_user_func(function() {
+        $dispatcher = new Dispatcher(call_user_func(function() {
             yield function(){return true;} => function(){
                 $this->getBody()->write("a");
                 return true; // treat just as succes instead of false;
             };
-        }), $this->view, $this->router))->dispatch($request, $response);
+        }), $this->view, $this->router);
     
+        $result = $dispatcher->dispatch($request, $response);
+        $response = $dispatcher->getActionResponse();
         $this->assertSame('a', (string)$response->getBody());        
     }
 
@@ -180,7 +194,9 @@ class DispatcherTest extends \PHPUnit_Framework_TestCase
                 return ['key' => 'var'];
             };
         }), $this->view, $this->router);
-        $response = $dispatcher->dispatch($request, $response);
+        
+        $result = $dispatcher->dispatch($request, $response);
+        $response = $dispatcher->getActionResponse();
         $this->assertInstanceof(ResponseInterface::class, $response);
         $this->assertSame('var', (string)$response->getBody());
     }
@@ -191,10 +207,13 @@ class DispatcherTest extends \PHPUnit_Framework_TestCase
         $response = new Response();
         $response->getBody()->write("oh ");
         
-        $response = (new Dispatcher(call_user_func(function() {
-            yield ['route' => '/'] => function(){return false;};            
-            yield ['route' => '/'] => function(){return "matched";};
-        }), $this->view, $this->router))->dispatch($request, $response);
+        $dispatcher = new Dispatcher(call_user_func(function() {
+            yield function(){return true;} => function(){return false;};            
+            yield function(){return true;} => function(){return "matched";};
+        }), $this->view, $this->router);
+        
+        $result = $dispatcher->dispatch($request, $response);
+        $response = $dispatcher->getActionResponse();        
         $this->assertSame('oh matched', (string)$response->getBody());
     }
     
@@ -204,10 +223,14 @@ class DispatcherTest extends \PHPUnit_Framework_TestCase
         $response = new Response();
         
         $actionContinue = $this->getMock(ActionContinueInterface::class);
-        $response = (new Dispatcher(call_user_func(function() use ($actionContinue) {
-            yield ['route' => '/'] => function() use ($actionContinue) {return $actionContinue;};
-            yield ['route' => '/'] => function(){return 'bar';};
-        }), $this->view, $this->router))->dispatch($request, $response);
+        $dispatcher = new Dispatcher(call_user_func(function() use ($actionContinue) {
+            yield function(){return true;} => function() use ($actionContinue) {return $actionContinue;};
+            yield function(){return true;} => function(){return 'bar';};
+        }), $this->view, $this->router);
+        
+        $result = $dispatcher->dispatch($request, $response);
+        $response = $dispatcher->getActionResponse();        
+        
         $this->assertSame('bar', (string)$response->getBody());
     }
 
@@ -218,7 +241,7 @@ class DispatcherTest extends \PHPUnit_Framework_TestCase
         ])->withUri(new Uri('/entry'));
         $response = new Response();
         
-        $response = (new Dispatcher(call_user_func(function() {
+        $dispatcher = new Dispatcher(call_user_func(function() {
             /** @var ServerRequestInterface $request */
             $error = (yield function (ServerRequestInterface $request) {
                 return $request->getMethod() === 'POST' &&
@@ -229,7 +252,11 @@ class DispatcherTest extends \PHPUnit_Framework_TestCase
             yield '/entry'=> function() use ($error) {
                 return current($error->getMessages());
             };
-        }), $this->view, $this->router))->dispatch($request, $response);
+        }), $this->view, $this->router);
+        
+        $result = $dispatcher->dispatch($request, $response);
+        $response = $dispatcher->getActionResponse();
+        
         $this->assertSame('foo', (string)$response->getBody());
     }
 
@@ -240,7 +267,7 @@ class DispatcherTest extends \PHPUnit_Framework_TestCase
         ])->withUri(new Uri('/entry'));
         $response = new Response();
         
-        $response = (new Dispatcher(call_user_func(function() {
+        $dispatcher = new Dispatcher(call_user_func(function() {
             $error = (yield function (ServerRequestInterface $request) {
                 return $request->getMethod() === 'POST' &&
                 $request->getUri()->getPath() === '/entry';
@@ -250,7 +277,10 @@ class DispatcherTest extends \PHPUnit_Framework_TestCase
             yield '/entry'=> function() use ($error) {
                 return 'error is '.gettype($error);
             };
-        }), $this->view, $this->router))->dispatch($request, $response);
+        }), $this->view, $this->router);
+        
+        $result = $dispatcher->dispatch($request, $response);
+        $response = $dispatcher->getActionResponse();
         $this->assertSame('error is NULL', (string)$response->getBody());        
     }
 }

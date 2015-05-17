@@ -28,6 +28,11 @@ class Dispatcher
      */
     private $templatePathResolver;
     
+    /**
+     * @var \Psr\Http\Message\ResponseInterface
+     */
+    private $actionResponse;
+    
     public function __construct(Generator $routing, ViewInterface $view, RouterInterface $router)
     {
         $this->routing = $routing;
@@ -35,6 +40,11 @@ class Dispatcher
         $this->router = $router;
     }
 
+    /**
+     * @param Request $request
+     * @param Response $response
+     * @return boolean
+     */
     public function dispatch(Request $request, Response $response)
     {
         while ($this->routing->valid()) {
@@ -73,12 +83,22 @@ class Dispatcher
                     continue;
                 }
 
-                return $this->handleActionResult($routeResult, $actionResult, $response);
+                $this->actionResponse = $this->handleActionResult($routeResult, $actionResult, $response);
+                return true;
             }
             $this->routing->next();
         }
         
         return false;
+    }
+    
+    public function getActionResponse()
+    {
+        if ($this->actionResponse instanceof Response) {
+            return $this->actionResponse;
+        }
+        
+        throw new \LogicException("Don't call when dispatch return false");
     }
     
     /**
@@ -101,7 +121,6 @@ class Dispatcher
                 break;
             case 'array':
                 // todo implements
-                break;
             default:
                 throw new InvalidArgumentException('Invalid router type is passed');
         }

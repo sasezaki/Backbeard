@@ -9,7 +9,7 @@ Backbeard is yet another DSLish minimum oriented framework for PHP.
 ![backbeard](http://gyazo.com/44a5c43a817927032d6f5ff0ed8cda74.png)
 
 ## Principle
-`yield $router($request) => $action();`
+`yield function(Request $request){return $matched;} => function(){return $response;};`
 
 ## Usage
 
