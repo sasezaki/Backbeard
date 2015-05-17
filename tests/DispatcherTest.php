@@ -26,6 +26,9 @@ class DispatcherTest extends \PHPUnit_Framework_TestCase
         $this->router = new Router(new \FastRoute\RouteParser\Std);
     }
     
+    /**
+     * @expectedException \LogicException
+     */
     public function testReturnFalseWhenNotMatched()
     {
         $request = ServerRequestFactory::fromGlobals();
@@ -35,6 +38,7 @@ class DispatcherTest extends \PHPUnit_Framework_TestCase
         }), $this->view, $this->router);
         $result = $dispatcher->dispatch($request, $response);
         $this->assertFalse($result);
+        $dispatcher->getActionResponse();
     }
     
     public function testRoutingStringHandleAsRoute()

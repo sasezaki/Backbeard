@@ -92,6 +92,10 @@ class Dispatcher
         return false;
     }
     
+    /**
+     * @throws \LogicException
+     * @return \Psr\Http\Message\ResponseInterface
+     */
     public function getActionResponse()
     {
         if ($this->actionResponse instanceof Response) {
