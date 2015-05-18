@@ -1,10 +1,11 @@
 <?php
+
 namespace Backbeard;
 
 class TemplatePathResolver implements TemplatePathResolverInterface
 {
     private $suffix = '.phtml';
-    
+
     public function resolve(RouteMatch $routeMatch)
     {
         $name = $routeMatch->getMatchedRouteName();
@@ -14,7 +15,7 @@ class TemplatePathResolver implements TemplatePathResolverInterface
             return $name.$this->suffix;
         }
     }
-    
+
     public function setSuffix($suffix)
     {
         $this->suffix = $suffix;

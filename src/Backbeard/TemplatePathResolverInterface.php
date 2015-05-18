@@ -1,4 +1,5 @@
 <?php
+
 namespace Backbeard;
 
 interface TemplatePathResolverInterface

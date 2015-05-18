@@ -1,4 +1,5 @@
 <?php
+
 namespace Backbeard;
 
 use Generator;
@@ -12,12 +13,12 @@ class Dispatcher
      * @var Generator
      */
     private $routing;
-    
+
     /**
      * @var ViewInterface
      */
     private $view;
-    
+
     /**
      * @var RouterInterface
      */
@@ -27,12 +28,12 @@ class Dispatcher
      * @var TemplatePathResolverInterface
      */
     private $templatePathResolver;
-    
+
     /**
      * @var \Psr\Http\Message\ResponseInterface
      */
     private $actionResponse;
-    
+
     public function __construct(Generator $routing, ViewInterface $view, RouterInterface $router)
     {
         $this->routing = $routing;
@@ -41,9 +42,10 @@ class Dispatcher
     }
 
     /**
-     * @param Request $request
+     * @param Request  $request
      * @param Response $response
-     * @return boolean
+     *
+     * @return bool
      */
     public function dispatch(Request $request, Response $response)
     {
@@ -56,9 +58,9 @@ class Dispatcher
             } else {
                 $routeResult = $this->dispatchByType($route, $request);
             }
-            
+
             if ($routeResult !== false) {
-                $params = false;            
+                $params = false;
                 if ($routeResult instanceof RouteMatch) {
                     $params = $routeResult->getParams();
                 } elseif (is_array($routeResult)) {
@@ -68,13 +70,13 @@ class Dispatcher
                 } else {
                     $routeResult = new RouteMatch(array());
                     $routeResult->setMatchedRouteName($request->getUri()->getPath());
-                }            
-                
+                }
+
                 $action = $action->bindTo($response);
-                
+
                 $actionResult = ($params) ?
                     call_user_func_array($action, $params) : call_user_func($action, $routeResult);
-                
+
                 if ($actionResult === false) {
                     $this->routing->next();
                     continue;
@@ -84,16 +86,18 @@ class Dispatcher
                 }
 
                 $this->actionResponse = $this->handleActionResult($routeResult, $actionResult, $response);
+
                 return true;
             }
             $this->routing->next();
         }
-        
+
         return false;
     }
-    
+
     /**
      * @throws \LogicException
+     *
      * @return \Psr\Http\Message\ResponseInterface
      */
     public function getActionResponse()
@@ -101,10 +105,10 @@ class Dispatcher
         if ($this->actionResponse instanceof Response) {
             return $this->actionResponse;
         }
-        
+
         throw new \LogicException("Don't call when dispatch return false");
     }
-    
+
     /**
      * @return \SfpBackbeard\TemplatePathResolverInterface
      */
@@ -113,7 +117,7 @@ class Dispatcher
         if (!$this->templatePathResolver) {
             $this->templatePathResolver = new TemplatePathResolver();
         }
-        
+
         return $this->templatePathResolver;
     }
 
@@ -134,6 +138,7 @@ class Dispatcher
     {
         if (is_string($actionResult)) {
             $response->getBody()->write($actionResult);
+
             return $response;
         } elseif (is_array($actionResult)) {
             $template = $this->getTemplatePathResolver()->resolve($routeMatch);
@@ -142,14 +147,14 @@ class Dispatcher
             $view->assign($actionResult);
 
             $body = $view->render($template, $response->getBody());
-            
+
             return $response->withBody($body);
         } elseif ($actionResult instanceof Response) {
             return $actionResult;
         } elseif (is_int($actionResult)) {
             return $response->withStatus($actionResult);
         }
-        
+
         return $response;
     }
 }

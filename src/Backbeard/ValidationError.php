@@ -1,4 +1,5 @@
 <?php
+
 namespace Backbeard;
 
 class ValidationError implements ActionContinueInterface

@@ -1,4 +1,5 @@
 <?php
+
 namespace Backbeard;
 
 /**
@@ -33,7 +34,8 @@ class RouteMatch
     /**
      * Set name of matched route.
      *
-     * @param  string $name
+     * @param string $name
+     *
      * @return RouteMatch
      */
     public function setMatchedRouteName($name)

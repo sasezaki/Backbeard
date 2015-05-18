@@ -1,7 +1,8 @@
 <?php
+
 namespace Backbeard;
 
-/**
+/*
  * This class is borrowed from nikic's FastRoute
  * FastRoute\DataGenerator\RegexBasedAbstract
  */
@@ -23,6 +24,7 @@ class Router implements RouterInterface
         list($regex, $params) = $this->buildRegexForRoute($routeData);
         if (preg_match("~^$regex$~", $uri, $match) !== 0) {
             array_shift($match);
+
             return $match;
         }
 
@@ -45,8 +47,9 @@ class Router implements RouterInterface
                 ));
             }
             $variables[$varName] = $varName;
-            $regex .= '(' . $regexPart . ')';
+            $regex .= '('.$regexPart.')';
         }
+
         return [$regex, $variables];
     }
 }
