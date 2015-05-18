@@ -50,6 +50,9 @@ class DispatcherTest extends \PHPUnit_Framework_TestCase
             yield '/foo/{id:[0-9]}' => function($id)  {
                 return (string)$id;
             };
+            yield '/bar/{id:[0-9]}' => function($id)  {
+                return (string)$id;
+            };
         });
 
         $dispatcher = new Dispatcher($routing, $this->view, $this->router);
@@ -60,6 +63,14 @@ class DispatcherTest extends \PHPUnit_Framework_TestCase
         $response = $dispatcher->getActionResponse();
         $this->assertInstanceof(Response::class, $response);
         $this->assertSame('5', (string)$response->getBody());
+        
+        // not matched
+        $request = ServerRequestFactory::fromGlobals()->withUri(new Uri('http://example.com/bar/6'));
+        $response = new Response();
+        $result = $dispatcher->dispatch($request, $response);
+        $response = $dispatcher->getActionResponse();
+        $this->assertInstanceof(Response::class, $response);
+        $this->assertSame('6', (string)$response->getBody());
     }
     
 //     public function testRoutingKeyHandleStringAsPath()
@@ -172,6 +183,34 @@ class DispatcherTest extends \PHPUnit_Framework_TestCase
         $result = $dispatcher->dispatch($request, $response);
         $response2 = $dispatcher->getActionResponse();
         $this->assertNotSame(spl_object_hash($response), spl_object_hash($response2));
+    }
+    
+    public function testIntActionAsStatusCode()
+    {
+        $request = ServerRequestFactory::fromGlobals();
+        $response = new Response();
+    
+        $dispatcher = new Dispatcher(call_user_func(function() {
+            yield function(){return true;} => 503;
+        }), $this->view, $this->router);
+    
+        $result = $dispatcher->dispatch($request, $response);
+        $response = $dispatcher->getActionResponse();
+        $this->assertSame(503, $response->getStatusCode());
+    }
+    
+    public function testActionResultIsIntUsedAsStatusCode()
+    {
+        $request = ServerRequestFactory::fromGlobals();
+        $response = new Response();
+        
+        $dispatcher = new Dispatcher(call_user_func(function() {
+            yield function(){return true;} => function() {return 503;};
+        }), $this->view, $this->router);
+        
+        $result = $dispatcher->dispatch($request, $response);
+        $response = $dispatcher->getActionResponse();
+        $this->assertSame(503, $response->getStatusCode());
     }
     
     public function testActionReturnUnkown()

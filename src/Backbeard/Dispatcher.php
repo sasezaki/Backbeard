@@ -72,10 +72,14 @@ class Dispatcher
                     $routeResult->setMatchedRouteName($request->getUri()->getPath());
                 }
 
-                $action = $action->bindTo($response);
+                if (is_int($action)) {
+                    $actionResult = $response->withStatus($action);
+                } else {
+                    $action = $action->bindTo($response);
+                    $actionResult = ($params) ?
+                        call_user_func_array($action, $params) : call_user_func($action, $routeResult);
+                }
 
-                $actionResult = ($params) ?
-                    call_user_func_array($action, $params) : call_user_func($action, $routeResult);
 
                 if ($actionResult === false) {
                     $this->routing->next();
