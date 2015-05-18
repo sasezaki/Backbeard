@@ -131,7 +131,35 @@ class Dispatcher
                 return $this->router->match($route, $request->getUri()->getPath());
                 break;
             case 'array':
-                // todo implements
+                $httpMethod = key($route);
+                $stringRoute = current($route);
+                
+                if (in_array($httpMethod, ['GET', 'POST', 'PUT', 'DELETE'])) {
+                    if ($httpMethod !== $request->getMethod()) {
+                        return false;
+                    }
+                }
+                
+                $match = $this->router->match($stringRoute, $request->getUri()->getPath());
+
+                if ($match === false) {
+                    return false;
+                }
+                
+                array_shift($route);
+                
+                foreach ($route as $method => $rules) {
+                    $getter = "get".ucfirst($method);
+                    foreach ($rules as $param => $callback) {
+                        $value = call_user_func([$request, $getter], $param);
+                        if (!$callback($value)) {
+                            return false;
+                        }
+                    }
+                }
+                
+                return true;
+                break;
             default:
                 throw new InvalidArgumentException('Invalid router type is passed');
         }

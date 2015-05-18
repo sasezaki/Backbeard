@@ -72,48 +72,57 @@ class DispatcherTest extends \PHPUnit_Framework_TestCase
         $this->assertSame('6', (string) $response->getBody());
     }
 
-//     public function testRoutingKeyHandleStringAsPath()
-//     {
-//         $request = ServerRequestFactory::fromGlobals();
-//         $response = new Response();
+    public function testRoutingKeyHandleStringAsPath()
+    {
+        /** @var Response $request */
+        $request = ServerRequestFactory::fromGlobals();
+        $response = new Response();
+                
+        $gen = function() {
+            yield ['GET' => '/foo'] => function(){return 'hello';};
+        };
+        
+        $dispatcher1 = new Dispatcher($gen(), $this->view, $this->router);
+        $dispatcher2 = new Dispatcher($gen(), $this->view, $this->router);
+        $dispatcher3 = new Dispatcher($gen(), $this->view, $this->router);
+        
+        $result = $dispatcher1->dispatch($request, $response);
+        $this->assertFalse($result);
 
-//         $response = (new Dispatcher(call_user_func(function() {
-//             yield ['route' => '/'] => function(){return 'hello';};
-//         }), $this->view, $this->router))->dispatch($request, $response);
+        $request = $request->withUri((new Uri)->withPath('/foo'))->withMethod('GET');
+        $result = $dispatcher2->dispatch($request, $response);
+        $this->assertTrue($result);
+        $this->assertSame('hello', (string) $response->getBody());
 
-//         $this->assertEmpty($response->getBody()->getContents());
-
-//         $request = $request->withUri((new Uri)->withPath('/'));
-//         $response = (new Dispatcher(call_user_func(function() {
-//             yield ['route' => '/'] => function(){return 'hello';};
-//         }), $this->view, $this->router))->dispatch($request, $response);
-//         $this->assertSame('hello', $response->getBody()->getContents());
-
-//         $request = $request->withUri((new Uri)->withPath('/foo/bar'));
-//         $response = (new Dispatcher(call_user_func(function() {
-//             yield ['route' => '/foo/:bar'] => function($bar){return $bar;};
-//         }), $this->view, $this->router))->dispatch($request, $response);
-//         $this->assertSame('bar', $response->getBody()->getContents());
-//     }
-
-//     public function testRoutingKeyHandleArrayAsRequestContext()
-//     {
-//         $request = new \Zend\Http\PhpEnvironment\Request;
-//         $request->setUri('/foo/bar');
-//         $response = (new Dispatcher(call_user_func(function() {
-//             yield ['route' => '/foo/:bar'] => function($bar){return $bar;};
-//         })))->dispatch($request);
-//         $this->assertSame('bar', $response->getContent());
-//         $dispatcher = (new Dispatcher(call_user_func(function() {
-//             yield ['method' => 'POST', 'route' => '/foo/:bar'] => function($bar){return $bar;};
-//         })));
-//         $this->assertEmpty($dispatcher->dispatch($request)->getContent());
-//         $dispatcher = (new Dispatcher(call_user_func(function() {
-//             yield ['method' => 'POST', 'route' => '/foo/:bar'] => function($bar){return $bar;};
-//         })));
-//         $request->setMethod('POST');
-//         $this->assertSame('bar', $dispatcher->dispatch($request)->getContent());
-//     }
+        $request = $request->withUri((new Uri)->withPath('/foo'))->withMethod('POST');
+        $result = $dispatcher3->dispatch($request, $response);
+        $this->assertFalse($result);
+        
+        $gen = function() {
+            yield ['GET' => '/foo',
+                   'Header' => [
+                       'User-Agent' => function($headers){
+                           if (!empty($headers) && strpos(current($headers), 'Mozilla') === 0) {
+                               return true;
+                           }
+                       }
+                   ]
+            ] => function(){return 'hello';};
+        };
+        
+        $dispatcher4 = new Dispatcher($gen(), $this->view, $this->router);
+        $dispatcher5 = new Dispatcher($gen(), $this->view, $this->router);
+        
+        
+        $request = $request->withUri((new Uri)->withPath('/foo'))->withMethod('GET');
+        $result = $dispatcher4->dispatch($request, $response);
+        $this->assertFalse($result);
+        
+        $request = $request->withUri((new Uri)->withPath('/foo'))->withMethod('GET');
+        $request = $request->withHeader('User-Agent', 'Mozilla/5.0');
+        $result = $dispatcher5->dispatch($request, $response);
+        $this->assertTrue($result);
+    }
 
     public function testRoutingKeyHandleClosureAsMatcher()
     {
