@@ -75,7 +75,8 @@ class Dispatcher
                 if (is_int($action)) {
                     $actionResult = $response->withStatus($action);
                 } else {
-                    $action = $action->bindTo($response);
+                    $actionScope = new ClosureActionScope($request, $response);
+                    $action = $action->bindTo($actionScope);
                     $actionResult = ($params) ?
                         call_user_func_array($action, $params) : call_user_func($action, $routeResult);
                 }

@@ -228,7 +228,7 @@ class DispatcherTest extends \PHPUnit_Framework_TestCase
         $response = new Response();
         $dispatcher = new Dispatcher(call_user_func(function () {
             yield function () {return true;} => function () {
-                $this->getBody()->write('a');
+                $this->getResponse()->getBody()->write('a');
 
                 return true; // treat just as succes instead of false;
             };
