@@ -39,6 +39,24 @@ class DispatcherTest extends \PHPUnit_Framework_TestCase
         $this->assertFalse($result);
         $dispatcher->getActionResponse();
     }
+    
+    public function testActionScope()
+    {
+        $request = ServerRequestFactory::fromGlobals();
+        $response = new Response();
+        $actionScopeResult = [];
+        $dispatcher = new Dispatcher(call_user_func(function () use (&$actionScopeResult) {
+            yield function () {return true;} => function () use (&$actionScopeResult) {
+                $actionScopeResult['request'] = $this->getRequest();
+                $actionScopeResult['response'] = $this->getResponse();
+            };
+        }), $this->view, $this->router);
+        $result = $dispatcher->dispatch($request, $response);
+        $this->assertTrue($result);
+        var_dump($actionScopeResult);
+        $this->assertTrue($actionScopeResult['request'] instanceof ServerRequestInterface);
+        $this->assertTrue($actionScopeResult['response'] instanceof ResponseInterface);
+    }
 
     public function testRoutingStringHandleAsRoute()
     {

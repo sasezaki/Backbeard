@@ -18,37 +18,38 @@ Backbeard is yet another DSLish minimum oriented framework for PHP.
 use Backbeard\Dispatcher;
 use Backbeard\ValidationError;
 
-$routing = call_user_func(function () {
-    yield '/hello/:foo' => function ($foo) {
-        return "Hello $foo";
-    };
+$routingFactory = function ($serviceLocator) {
+    yield '/hello' => 'hello';
 
-    $error = (yield ['POST' => '/entry/:id'] => function ($id) {
-        if ($this->get('request')->getPost('NAME') == 'wtf') {
+    $error = (yield ['POST' => '/entry/{id:[0-9]}'] => function ($id) {
+        if ($this->getRequest()->getPost()['NAME'] == 'wtf') {
             return ['var1' => 'baz']; // will be render entry.phtml
         } else {
             return new ValidationError(['error']);
         }
     });
 
-    yield '/entry/:id' => function ($id) use ($error) {
-        $message = $error ? current($error->getMessages()) :'';
+    yield '/entry/{id:[0-9]}' => function ($id) use ($error) {
+        $message = $error ? htmlspecialchars(current($error->getMessages())) :'';
         return "Hello $id ".$message.
         '<form method="POST" action="/entry/'.$id.'">'.
             'NAME<input type="text" name="NAME">'.
         '</form>';
     };
 
-    yield function(Request $request) {
-        return $request->getRequestUri() === '/';
-    } => function () {
-        $response = $this->get('response');
-        $response->setContent("Hello");
-        return $response;
-    };
-});
+    yield [
+      'GET' => '/foo',
+      'Header' => [
+        'User-Agent' => function($headers){
+          if (!empty($headers) && strpos(current($headers), 'Mozilla') === 0) {
+            return true;
+          }
+        }
+      ]
+    ] => function(){return 'hello Mozilla';};
+};
 
-(new Dispatcher($routing))->dispatch(new Request)->send();
+(new Dispatcher($routingFactory($serviceLocator)))->dispatch(new Request, new Response);
 ```
 
 ## Install 
