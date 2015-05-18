@@ -80,7 +80,6 @@ class Dispatcher
                         call_user_func_array($action, $params) : call_user_func($action, $routeResult);
                 }
 
-
                 if ($actionResult === false) {
                     $this->routing->next();
                     continue;

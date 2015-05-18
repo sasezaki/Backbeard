@@ -1,4 +1,5 @@
 <?php
+
 namespace BackbeardTest;
 
 use Backbeard\Router;
