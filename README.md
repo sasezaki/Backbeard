@@ -41,27 +41,24 @@ $routingFactory = function ($serviceLocator) {
       'GET' => '/foo',
       'Header' => [
         'User-Agent' => function($headers){
-          if (!empty($headers) && strpos(current($headers), 'Mozilla') === 0) {
+          if (!empty($headers) && strpos(current($headers), 'Coffee') === 0) {
             return true;
           }
         }
       ]
-    ] => function(){return 'hello Mozilla';};
+    ] => 418; // status code "I'm a teapot"
 };
 
 (new Dispatcher($routingFactory($serviceLocator)))->dispatch(new Request, new Response);
 ```
 
-## Install 
-There is several way.
-
-### Using as component 
+## Install with composer
  - `php composer.phar require sasezaki/backbeard dev-master`
 
-### Using Application Skeleton
-https://github.com/sasezaki/BackbeardSkeleton/
+### Using As Middleware for Conduit(coming soon..)
+https://github.com/struggle-for-php/sfp-conduit-application-skeleton/tree/backbeard
 
- - `php composer.phar create-project -s dev sasezaki/backbeard-skeleton path/to/install`
+ - `php composer.phar create-project -s dev struggle-for-php/sfp-conduit-application-skeleton path/to/install`
 
     When install finished, you can try running with php built-in web server 
  - `php -S localhost:8080 -t public/ public/index.php`

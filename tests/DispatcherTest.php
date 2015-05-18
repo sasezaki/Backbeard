@@ -39,7 +39,7 @@ class DispatcherTest extends \PHPUnit_Framework_TestCase
         $this->assertFalse($result);
         $dispatcher->getActionResponse();
     }
-    
+
     public function testActionScope()
     {
         $request = ServerRequestFactory::fromGlobals();
@@ -95,48 +95,47 @@ class DispatcherTest extends \PHPUnit_Framework_TestCase
         /** @var Response $request */
         $request = ServerRequestFactory::fromGlobals();
         $response = new Response();
-                
-        $gen = function() {
-            yield ['GET' => '/foo'] => function(){return 'hello';};
+
+        $gen = function () {
+            yield ['GET' => '/foo'] => function () {return 'hello';};
         };
-        
+
         $dispatcher1 = new Dispatcher($gen(), $this->view, $this->router);
         $dispatcher2 = new Dispatcher($gen(), $this->view, $this->router);
         $dispatcher3 = new Dispatcher($gen(), $this->view, $this->router);
-        
+
         $result = $dispatcher1->dispatch($request, $response);
         $this->assertFalse($result);
 
-        $request = $request->withUri((new Uri)->withPath('/foo'))->withMethod('GET');
+        $request = $request->withUri((new Uri())->withPath('/foo'))->withMethod('GET');
         $result = $dispatcher2->dispatch($request, $response);
         $this->assertTrue($result);
         $this->assertSame('hello', (string) $response->getBody());
 
-        $request = $request->withUri((new Uri)->withPath('/foo'))->withMethod('POST');
+        $request = $request->withUri((new Uri())->withPath('/foo'))->withMethod('POST');
         $result = $dispatcher3->dispatch($request, $response);
         $this->assertFalse($result);
-        
-        $gen = function() {
+
+        $gen = function () {
             yield ['GET' => '/foo',
                    'Header' => [
-                       'User-Agent' => function($headers){
+                       'User-Agent' => function ($headers) {
                            if (!empty($headers) && strpos(current($headers), 'Mozilla') === 0) {
                                return true;
                            }
-                       }
-                   ]
-            ] => function(){return 'hello';};
+                       },
+                   ],
+            ] => function () {return 'hello';};
         };
-        
+
         $dispatcher4 = new Dispatcher($gen(), $this->view, $this->router);
         $dispatcher5 = new Dispatcher($gen(), $this->view, $this->router);
-        
-        
-        $request = $request->withUri((new Uri)->withPath('/foo'))->withMethod('GET');
+
+        $request = $request->withUri((new Uri())->withPath('/foo'))->withMethod('GET');
         $result = $dispatcher4->dispatch($request, $response);
         $this->assertFalse($result);
-        
-        $request = $request->withUri((new Uri)->withPath('/foo'))->withMethod('GET');
+
+        $request = $request->withUri((new Uri())->withPath('/foo'))->withMethod('GET');
         $request = $request->withHeader('User-Agent', 'Mozilla/5.0');
         $result = $dispatcher5->dispatch($request, $response);
         $this->assertTrue($result);
