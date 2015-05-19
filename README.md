@@ -9,7 +9,7 @@ Backbeard is yet another DSLish minimum oriented framework for PHP.
 ![backbeard](http://gyazo.com/44a5c43a817927032d6f5ff0ed8cda74.png)
 
 ## Principle
-`yield function(Request $request){return $matched;} => function(){return $response;};`
+`yield $router($request) => $action();`
 
 ## Usage
 
@@ -25,7 +25,7 @@ $routingFactory = function ($serviceLocator) {
         if ($this->getRequest()->getPost()['NAME'] == 'wtf') {
             return ['var1' => 'baz']; // will be render entry.phtml
         } else {
-            return new ValidationError(['error']);
+            return new ValidationError(['error message!']);
         }
     });
 
@@ -53,7 +53,7 @@ $routingFactory = function ($serviceLocator) {
 ```
 
 ## Install with composer
- - `php composer.phar require sasezaki/backbeard dev-master`
+ - `composer require sasezaki/backbeard dev-master`
 
 ### Using As Middleware for Conduit(coming soon..)
 https://github.com/struggle-for-php/sfp-conduit-application-skeleton/tree/backbeard
