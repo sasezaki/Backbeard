@@ -17,51 +17,48 @@ Backbeard is yet another DSLish minimum oriented framework for PHP.
 <?php
 use Backbeard\Dispatcher;
 use Backbeard\ValidationError;
-use Zend\Http\PhpEnvironment\Request;
 
-$routing = call_user_func(function () {
-    yield '/hello/:foo' => function ($foo) {
-        return "Hello $foo";
-    };
+$routingFactory = function ($serviceLocator) {
+    yield '/hello' => 'hello';
 
-    $error = (yield ['method' => 'POST', 'route' => '/entry/:id'] => function ($id) {
-        if ($this->get('request')->getPost('NAME') == 'wtf') {
+    $error = (yield ['POST' => '/entry/{id:[0-9]}'] => function ($id) {
+        if ($this->getRequest()->getPost()['NAME'] == 'wtf') {
             return ['var1' => 'baz']; // will be render entry.phtml
         } else {
-            return new ValidationError(['error']);
+            return new ValidationError(['error message!']);
         }
     });
 
-    yield '/entry/:id' => function ($id) use ($error) {
-        $message = $error ? current($error->getMessages()) :'';
+    yield '/entry/{id:[0-9]}' => function ($id) use ($error) {
+        $message = $error ? htmlspecialchars(current($error->getMessages())) :'';
         return "Hello $id ".$message.
         '<form method="POST" action="/entry/'.$id.'">'.
             'NAME<input type="text" name="NAME">'.
         '</form>';
     };
 
-    yield function(Request $request) {
-        return $request->getRequestUri() === '/';
-    } => function () {
-        $response = $this->get('response');
-        $response->setContent("Hello");
-        return $response;
-    };
-});
+    yield [
+      'GET' => '/foo',
+      'Header' => [
+        'User-Agent' => function($headers){
+          if (!empty($headers) && strpos(current($headers), 'Coffee') === 0) {
+            return true;
+          }
+        }
+      ]
+    ] => 418; // status code "I'm a teapot"
+};
 
-(new Dispatcher($routing))->dispatch(new Request)->send();
+(new Dispatcher($routingFactory($serviceLocator)))->dispatch(new Request, new Response);
 ```
 
-## Install 
-There is several way.
+## Install with composer
+ - `composer require sasezaki/backbeard dev-master`
 
-### Using as component 
- - `php composer.phar require sasezaki/backbeard dev-master`
+### Using As Middleware for Conduit(coming soon..)
+https://github.com/struggle-for-php/sfp-conduit-application-skeleton/tree/backbeard
 
-### Using Application Skeleton
-https://github.com/sasezaki/BackbeardSkeleton/
-
- - `php composer.phar create-project -s dev sasezaki/backbeard-skeleton path/to/install`
+ - `php composer.phar create-project -s dev struggle-for-php/sfp-conduit-application-skeleton path/to/install`
 
     When install finished, you can try running with php built-in web server 
  - `php -S localhost:8080 -t public/ public/index.php`

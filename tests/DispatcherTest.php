@@ -1,107 +1,183 @@
 <?php
+
 namespace BackbeardTest;
+
 use Backbeard\Dispatcher;
+use Backbeard\ActionContinueInterface;
 use Backbeard\ValidationError;
-use Zend\Stdlib\ReqeuestInterface as Request;
-use Zend\Stdlib\ResponseInterface as Response;
-
-use Zend\View\View;
-use Zend\View\Renderer\PhpRenderer;
-use Zend\View\Resolver\TemplatePathStack;
-use Zend\View\Strategy\PhpRendererStrategy;
-use Zend\View\Model\ViewModel;
-
-use Zend\ServiceManager\ServiceManager;
+use Backbeard\View;
+use Backbeard\Router;
+use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Message\ResponseInterface;
+use Zend\Diactoros\ServerRequestFactory;
+use Zend\Diactoros\Response;
+use Zend\Diactoros\Uri;
+use Backbeard\RouteMatch;
 
 class DispatcherTest extends \PHPUnit_Framework_TestCase
 {
-    private $serviceLocator;
+    private $view;
+    private $router;
 
     public function setUp()
     {
-        $sm = new ServiceManager;
-        $sm->setFactory('view', function () {
-            $view = new View;
-            $renderer = new PhpRenderer();
-            $resolver = new TemplatePathStack;
-            $resolver->setPaths([__DIR__.'/_files/views/']);
-            $renderer->setResolver($resolver);
-
-            $view->getEventManager()->attach(new PhpRendererStrategy($renderer));
-            return $view;
-        });
-
-        $this->serviceLocator = $sm;
+        $this->view = new View(__DIR__.'/_files/views');
+        $this->router = new Router(new \FastRoute\RouteParser\Std());
     }
 
-    public function testDispatcherShouldBeZF2DispatcherCompatible()
+    /**
+     * @expectedException \LogicException
+     */
+    public function testReturnFalseWhenNotMatched()
     {
-        $request = $this->getMock('Zend\Stdlib\RequestInterface');
-        $dispatcher = new Dispatcher(call_user_func(function(){yield '/' => '';}));
-        $this->assertInstanceof('Zend\Stdlib\ResponseInterface', $dispatcher->dispatch($request));
+        $request = ServerRequestFactory::fromGlobals();
+        $response = new Response();
+        $dispatcher = new Dispatcher(call_user_func(function () {
+            yield function () {return false;} => function () {};
+        }), $this->view, $this->router);
+        $result = $dispatcher->dispatch($request, $response);
+        $this->assertFalse($result);
+        $dispatcher->getActionResponse();
+    }
+
+    public function testActionScope()
+    {
+        $request = ServerRequestFactory::fromGlobals();
+        $response = new Response();
+        $actionScopeResult = [];
+        $dispatcher = new Dispatcher(call_user_func(function () use (&$actionScopeResult) {
+            yield function () {return true;} => function () use (&$actionScopeResult) {
+                $actionScopeResult['request'] = $this->getRequest();
+                $actionScopeResult['response'] = $this->getResponse();
+            };
+        }), $this->view, $this->router);
+        $result = $dispatcher->dispatch($request, $response);
+        $this->assertTrue($result);
+        $this->assertTrue($actionScopeResult['request'] instanceof ServerRequestInterface);
+        $this->assertTrue($actionScopeResult['response'] instanceof ResponseInterface);
+    }
+
+    public function testRoutingStringHandleAsRoute()
+    {
+        $request = ServerRequestFactory::fromGlobals()->withUri(new Uri('http://example.com/foo/5'));
+        $response = new Response();
+
+        $routing = call_user_func(function () {
+            yield '/foo/{id:[0-9]}' => function ($id) {
+                return (string) $id;
+            };
+            yield '/bar/{id:[0-9]}' => function ($id) {
+                return (string) $id;
+            };
+        });
+
+        $dispatcher = new Dispatcher($routing, $this->view, $this->router);
+
+        $result = $dispatcher->dispatch($request, $response);
+
+        $this->assertTrue($result);
+        $response = $dispatcher->getActionResponse();
+        $this->assertInstanceof(Response::class, $response);
+        $this->assertSame('5', (string) $response->getBody());
+
+        // not matched
+        $request = ServerRequestFactory::fromGlobals()->withUri(new Uri('http://example.com/bar/6'));
+        $response = new Response();
+        $result = $dispatcher->dispatch($request, $response);
+        $response = $dispatcher->getActionResponse();
+        $this->assertInstanceof(Response::class, $response);
+        $this->assertSame('6', (string) $response->getBody());
     }
 
     public function testRoutingKeyHandleStringAsPath()
     {
-        $request = $this->getMock('\Zend\Stdlib\RequestInterface');
-        $response = (new Dispatcher(call_user_func(function() {
-            yield ['route' => '/'] => function(){return 'hello';};
-        })))->dispatch($request);
-        $this->assertEmpty($response->getContent());
+        /** @var Response $request */
+        $request = ServerRequestFactory::fromGlobals();
+        $response = new Response();
 
-        $request = new \Zend\Http\PhpEnvironment\Request;
-        $request->setUri('/');
-        $response = (new Dispatcher(call_user_func(function() {
-            yield ['route' => '/'] => function(){return 'hello';};
-        })))->dispatch($request);
-        $this->assertSame('hello', $response->getContent());
+        $gen = function () {
+            yield ['GET' => '/foo'] => function () {return 'hello';};
+        };
 
-        $request = new \Zend\Http\PhpEnvironment\Request;
-        $request->setUri('/foo/bar');
-        $response = (new Dispatcher(call_user_func(function() {
-            yield ['route' => '/foo/:bar'] => function($bar){return $bar;};
-        })))->dispatch($request);
-        $this->assertSame('bar', $response->getContent());
-    }
+        $dispatcher1 = new Dispatcher($gen(), $this->view, $this->router);
+        $dispatcher2 = new Dispatcher($gen(), $this->view, $this->router);
+        $dispatcher3 = new Dispatcher($gen(), $this->view, $this->router);
 
-    public function testRoutingKeyHandleArrayAsRequestContext()
-    {
-        $request = new \Zend\Http\PhpEnvironment\Request;
-        $request->setUri('/foo/bar');
+        $result = $dispatcher1->dispatch($request, $response);
+        $this->assertFalse($result);
 
-        $response = (new Dispatcher(call_user_func(function() {
-            yield ['route' => '/foo/:bar'] => function($bar){return $bar;};
-        })))->dispatch($request);
-        $this->assertSame('bar', $response->getContent());
+        $request = $request->withUri((new Uri())->withPath('/foo'))->withMethod('GET');
+        $result = $dispatcher2->dispatch($request, $response);
+        $this->assertTrue($result);
+        $this->assertSame('hello', (string) $response->getBody());
 
-        $dispatcher = (new Dispatcher(call_user_func(function() {
-            yield ['method' => 'POST', 'route' => '/foo/:bar'] => function($bar){return $bar;};
-        })));
-        $this->assertEmpty($dispatcher->dispatch($request)->getContent());
+        $request = $request->withUri((new Uri())->withPath('/foo'))->withMethod('POST');
+        $result = $dispatcher3->dispatch($request, $response);
+        $this->assertFalse($result);
 
-        $dispatcher = (new Dispatcher(call_user_func(function() {
-            yield ['method' => 'POST', 'route' => '/foo/:bar'] => function($bar){return $bar;};
-        })));
-        $request->setMethod('POST');
-        $this->assertSame('bar', $dispatcher->dispatch($request)->getContent());
+        $gen = function () {
+            yield ['GET' => '/foo',
+                   'Header' => [
+                       'User-Agent' => function ($headers) {
+                           if (!empty($headers) && strpos(current($headers), 'Mozilla') === 0) {
+                               return true;
+                           }
+                       },
+                   ],
+            ] => function () {return 'hello';};
+        };
+
+        $dispatcher4 = new Dispatcher($gen(), $this->view, $this->router);
+        $dispatcher5 = new Dispatcher($gen(), $this->view, $this->router);
+
+        $request = $request->withUri((new Uri())->withPath('/foo'))->withMethod('GET');
+        $result = $dispatcher4->dispatch($request, $response);
+        $this->assertFalse($result);
+
+        $request = $request->withUri((new Uri())->withPath('/foo'))->withMethod('GET');
+        $request = $request->withHeader('User-Agent', 'Mozilla/5.0');
+        $result = $dispatcher5->dispatch($request, $response);
+        $this->assertTrue($result);
     }
 
     public function testRoutingKeyHandleClosureAsMatcher()
     {
-        $request = new \Zend\Http\PhpEnvironment\Request;
-        $response = (new Dispatcher(call_user_func(function() {
-            yield function(){return true;} => function(){return 'bar';};
-        })))->dispatch($request);
-        $this->assertSame('bar', $response->getContent());
+        $request = ServerRequestFactory::fromGlobals();
+        $response = new Response();
+
+        $dispatcher = new Dispatcher(call_user_func(function () {
+            yield function () {return true;} => function () {return 'bar';};
+        }), $this->view, $this->router);
+        $result = $dispatcher->dispatch($request, $response);
+        $response = $dispatcher->getActionResponse();
+
+        $this->assertSame('bar', (string) $response->getBody());
     }
 
     public function testRouterResultArrayShouldPassAction()
     {
-        $request = new \Zend\Http\PhpEnvironment\Request;
-        $response = (new Dispatcher(call_user_func(function() {
-            yield function(){return ['var1', 'var2'];} => function($var1, $var2){return $var1.$var2;};
-        })))->dispatch($request);
-        $this->assertSame('var1var2', $response->getContent());
+        $request = ServerRequestFactory::fromGlobals();
+        $response = new Response();
+
+        $dispatcher = new Dispatcher(call_user_func(function () {
+            yield function () {return ['var1', 'var2'];} => function ($var1, $var2) {return $var1.$var2;};
+        }), $this->view, $this->router);
+        $result = $dispatcher->dispatch($request, $response);
+        $response = $dispatcher->getActionResponse();
+        $this->assertSame('var1var2', (string) $response->getBody());
+    }
+
+    public function testRouterResultRouteMatchShouldPassAction()
+    {
+        $request = ServerRequestFactory::fromGlobals();
+        $response = new Response();
+
+        $dispatcher = new Dispatcher(call_user_func(function () {
+            yield function () {return new RouteMatch(['var1', 'var2']);} => function ($var1, $var2) {return $var1.$var2;};
+        }), $this->view, $this->router);
+        $result = $dispatcher->dispatch($request, $response);
+        $response = $dispatcher->getActionResponse();
+        $this->assertSame('var1var2', (string) $response->getBody());
     }
 
     /**
@@ -109,85 +185,172 @@ class DispatcherTest extends \PHPUnit_Framework_TestCase
      */
     public function testRoutingKeyHandleUnexpected()
     {
-        $request = new \Zend\Http\PhpEnvironment\Request;
-        $response = (new Dispatcher(call_user_func(function() {
-            yield null => function(){return 'bar';};
-        })))->dispatch($request);
+        $request = ServerRequestFactory::fromGlobals();
+        $response = new Response();
+
+        (new Dispatcher(call_user_func(function () {
+            yield null => function () {return 'bar';};
+        }), $this->view, $this->router))->dispatch($request, $response);
     }
 
-    public function testActionResultHandlerShouldReturnResponse()
+    public function testActionReturnResponseShouldBeUsed()
     {
-        $request = new \Zend\Http\PhpEnvironment\Request;
-        $request->setUri('/test');
-        $dispatcher = new Dispatcher(call_user_func(function() {
-            yield ['route' => '/test'] => function () {
-                return new ViewModel(['key' => 'var']);
+        $request = ServerRequestFactory::fromGlobals();
+        $response = new Response();
+
+        $dispatcher = new Dispatcher(call_user_func(function () {
+            yield function () {return true;} => function () {
+                $response_new = new Response();
+
+                return $response_new;
             };
-        }), $this->serviceLocator);
+        }), $this->view, $this->router);
+        $result = $dispatcher->dispatch($request, $response);
+        $response2 = $dispatcher->getActionResponse();
+        $this->assertNotSame(spl_object_hash($response), spl_object_hash($response2));
+    }
 
-        $response = $dispatcher->dispatch($request);
-        $this->assertInstanceof('Zend\Stdlib\ResponseInterface', $response);
+    public function testIntActionAsStatusCode()
+    {
+        $request = ServerRequestFactory::fromGlobals();
+        $response = new Response();
 
-        $request = new \Zend\Http\PhpEnvironment\Request;
-        $request->setUri('/test');
-        $response = (new Dispatcher(call_user_func(function() {
-            yield ['route' => '/test'] => function () {return $this->get('response');};
-        })))->dispatch($request);
-        $this->assertInstanceof('Zend\Stdlib\ResponseInterface', $response);
+        $dispatcher = new Dispatcher(call_user_func(function () {
+            yield function () {return true;} => 503;
+        }), $this->view, $this->router);
+
+        $result = $dispatcher->dispatch($request, $response);
+        $response = $dispatcher->getActionResponse();
+        $this->assertSame(503, $response->getStatusCode());
+    }
+
+    public function testActionResultIsIntUsedAsStatusCode()
+    {
+        $request = ServerRequestFactory::fromGlobals();
+        $response = new Response();
+
+        $dispatcher = new Dispatcher(call_user_func(function () {
+            yield function () {return true;} => function () {return 503;};
+        }), $this->view, $this->router);
+
+        $result = $dispatcher->dispatch($request, $response);
+        $response = $dispatcher->getActionResponse();
+        $this->assertSame(503, $response->getStatusCode());
+    }
+
+    public function testActionReturnUnkown()
+    {
+        $request = ServerRequestFactory::fromGlobals();
+        $response = new Response();
+        $dispatcher = new Dispatcher(call_user_func(function () {
+            yield function () {return true;} => function () {
+                $this->getResponse()->getBody()->write('a');
+
+                return true; // treat just as succes instead of false;
+            };
+        }), $this->view, $this->router);
+
+        $result = $dispatcher->dispatch($request, $response);
+        $response = $dispatcher->getActionResponse();
+        $this->assertSame('a', (string) $response->getBody());
+    }
+
+    public function testRoutenameWouldbeResolveAsTemplateName()
+    {
+        $request = ServerRequestFactory::fromGlobals()->withUri(new Uri('/test'));
+        $response = new Response();
+        $dispatcher = new Dispatcher(call_user_func(function () {
+            yield '/test' => function () {
+                return ['key' => 'var'];
+            };
+        }), $this->view, $this->router);
+
+        $result = $dispatcher->dispatch($request, $response);
+        $response = $dispatcher->getActionResponse();
+        $this->assertInstanceof(ResponseInterface::class, $response);
+        $this->assertSame('var', (string) $response->getBody());
     }
 
     public function testContinueWhenActionReturnIsFalse()
     {
-        $request = new \Zend\Http\PhpEnvironment\Request;
-        $request->setUri('/');
-        $response = (new Dispatcher(call_user_func(function() {
-            yield ['route' => '/'] => function(){return false;};
-        })))->dispatch($request, (new \Zend\Http\PhpEnvironment\Response)->setContent("not match"));
-        $this->assertInstanceof('Zend\Stdlib\ResponseInterface', $response);
-        $this->assertSame('not match', $response->getContent());
+        $request = ServerRequestFactory::fromGlobals()->withUri(new Uri('/'));
+        $response = new Response();
+        $response->getBody()->write('oh ');
+
+        $dispatcher = new Dispatcher(call_user_func(function () {
+            yield function () {return true;} => function () {return false;};
+            yield function () {return true;} => function () {return 'matched';};
+        }), $this->view, $this->router);
+
+        $result = $dispatcher->dispatch($request, $response);
+        $response = $dispatcher->getActionResponse();
+        $this->assertSame('oh matched', (string) $response->getBody());
     }
-    
+
     public function testContinueWhenActionReturnHasActionContinueInterface()
     {
-        $request = new \Zend\Http\PhpEnvironment\Request;
-        $request->setUri('/');
-        $actionContinue = $this->getMock('Backbeard\ActionContinueInterface');
-        $response = (new Dispatcher(call_user_func(function() use ($actionContinue) {
-            yield ['route' => '/'] => function() use ($actionContinue) {return $actionContinue;};
-            yield ['route' => '/'] => function(){return 'bar';};
-        })))->dispatch($request);
-        $this->assertSame('bar', $response->getContent());
+        $request = ServerRequestFactory::fromGlobals()->withUri(new Uri('/'));
+        $response = new Response();
+
+        $actionContinue = $this->getMock(ActionContinueInterface::class);
+        $dispatcher = new Dispatcher(call_user_func(function () use ($actionContinue) {
+            yield function () {return true;} => function () use ($actionContinue) {return $actionContinue;};
+            yield function () {return true;} => function () {return 'bar';};
+        }), $this->view, $this->router);
+
+        $result = $dispatcher->dispatch($request, $response);
+        $response = $dispatcher->getActionResponse();
+
+        $this->assertSame('bar', (string) $response->getBody());
     }
 
     public function testValidationErrorShouldContinueRoutingAndHasError()
     {
-        $request = new \Zend\Http\PhpEnvironment\Request;
-        $request->setUri('/entry');
-        $request->setMethod('POST');
-        $response = (new Dispatcher(call_user_func(function() {
-            $error = (yield ['method' => 'POST', 'route' => '/entry'] => function() {
+        $request = ServerRequestFactory::fromGlobals([
+            'REQUEST_METHOD' => 'POST',
+        ])->withUri(new Uri('/entry'));
+        $response = new Response();
+
+        $dispatcher = new Dispatcher(call_user_func(function () {
+            /* @var ServerRequestInterface $request */
+            $error = (yield function (ServerRequestInterface $request) {
+                return $request->getMethod() === 'POST' &&
+                    $request->getUri()->getPath() === '/entry';
+            } => function () {
                 return new ValidationError(['foo']);
             });
-            yield '/entry'=> function() use ($error) {
+            yield '/entry' => function () use ($error) {
                 return current($error->getMessages());
             };
-        })))->dispatch($request);
-        $this->assertSame('foo', $response->getContent());
+        }), $this->view, $this->router);
+
+        $result = $dispatcher->dispatch($request, $response);
+        $response = $dispatcher->getActionResponse();
+
+        $this->assertSame('foo', (string) $response->getBody());
     }
 
     public function testValidationThroughWhenNotMatchedRouting()
     {
-        $request = new \Zend\Http\PhpEnvironment\Request;
-        $request->setUri('/entry');
-        $request->setMethod('GET');
-        $response = (new Dispatcher(call_user_func(function() {
-            $error = (yield ['method' => 'POST', 'route' => '/entry'] => function() {
+        $request = ServerRequestFactory::fromGlobals([
+            'REQUEST_METHOD' => 'GET',
+        ])->withUri(new Uri('/entry'));
+        $response = new Response();
+
+        $dispatcher = new Dispatcher(call_user_func(function () {
+            $error = (yield function (ServerRequestInterface $request) {
+                return $request->getMethod() === 'POST' &&
+                $request->getUri()->getPath() === '/entry';
+            } => function () {
                 return new ValidationError(['foo']);
             });
-            yield '/entry'=> function() use ($error) {
-                return 'bar';
+            yield '/entry' => function () use ($error) {
+                return 'error is '.gettype($error);
             };
-        })))->dispatch($request);
-        $this->assertSame('bar', $response->getContent());
+        }), $this->view, $this->router);
+
+        $result = $dispatcher->dispatch($request, $response);
+        $response = $dispatcher->getActionResponse();
+        $this->assertSame('error is NULL', (string) $response->getBody());
     }
 }
