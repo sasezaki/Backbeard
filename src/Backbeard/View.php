@@ -4,7 +4,7 @@ namespace Backbeard;
 
 use SfpStreamView\View as BaseView;
 use Psr\Http\Message\StreamInterface;
-use Phly\Http\Stream;
+use Zend\Diactoros\Stream;
 
 class View extends BaseView implements ViewInterface
 {

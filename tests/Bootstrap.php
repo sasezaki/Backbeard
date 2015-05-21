@@ -13,4 +13,3 @@ foreach ($files as $file) {
 if (!isset($loader)) {
     throw new RuntimeException('vendor/autoload.php could not be found. Did you install via composer?');
 }
-//$loader->add('BackbeardTest\\', __DIR__);

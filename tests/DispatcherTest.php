@@ -9,9 +9,9 @@ use Backbeard\View;
 use Backbeard\Router;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
-use Phly\Http\ServerRequestFactory;
-use Phly\Http\Response;
-use Phly\Http\Uri;
+use Zend\Diactoros\ServerRequestFactory;
+use Zend\Diactoros\Response;
+use Zend\Diactoros\Uri;
 use Backbeard\RouteMatch;
 
 class DispatcherTest extends \PHPUnit_Framework_TestCase
@@ -53,7 +53,6 @@ class DispatcherTest extends \PHPUnit_Framework_TestCase
         }), $this->view, $this->router);
         $result = $dispatcher->dispatch($request, $response);
         $this->assertTrue($result);
-        var_dump($actionScopeResult);
         $this->assertTrue($actionScopeResult['request'] instanceof ServerRequestInterface);
         $this->assertTrue($actionScopeResult['response'] instanceof ResponseInterface);
     }
