@@ -15,6 +15,8 @@ Backbeard is yet another DSLish minimum oriented framework for PHP.
 
 ```php
 <?php
+use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Message\ResponseInterface;
 use Backbeard\Dispatcher;
 use Backbeard\ValidationError;
 
@@ -47,6 +49,13 @@ $routingFactory = function ($serviceLocator) {
         }
       ]
     ] => 418; // status code "I'm a teapot"
+
+    yield (ServerRequestInterface $request) {
+		return true;
+    } => function () {
+    	/** @var ResponseInterface $this */
+    	return $this;
+    };
 };
 
 (new Dispatcher($routingFactory($serviceLocator)))->dispatch(new Request, new Response);
@@ -55,10 +64,10 @@ $routingFactory = function ($serviceLocator) {
 ## Install with composer
  - `composer require sasezaki/backbeard dev-master`
 
-### Using As Middleware for Conduit(coming soon..)
-https://github.com/struggle-for-php/sfp-conduit-application-skeleton/tree/backbeard
+### Using As Middleware for zend-stratigility
+https://github.com/struggle-for-php/sfp-stratigility-skeleton
 
- - `php composer.phar create-project -s dev struggle-for-php/sfp-conduit-application-skeleton path/to/install`
+ - `php composer.phar create-project -s dev struggle-for-php/sfp-stratigility-skeleton path/to/install`
 
     When install finished, you can try running with php built-in web server 
  - `php -S localhost:8080 -t public/ public/index.php`
