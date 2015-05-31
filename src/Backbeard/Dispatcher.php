@@ -175,12 +175,11 @@ class Dispatcher
         } elseif (is_array($actionResult)) {
             $template = $this->getTemplatePathResolver()->resolve($routeMatch);
 
-            $view = $this->view;
-            $view->assign($actionResult);
+            $model = new ViewModel();
+            $model->setTemplate($template);
+            $model->setVariables($actionResult);
 
-            $body = $view->render($template, $response->getBody());
-
-            return $response->withBody($body);
+            return $this->view->marshalResponse($model, $response);
         } elseif ($actionResult instanceof Response) {
             return $actionResult;
         } elseif (is_int($actionResult)) {

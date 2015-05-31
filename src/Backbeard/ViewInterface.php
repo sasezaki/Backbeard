@@ -1,19 +1,14 @@
 <?php
 
 namespace Backbeard;
+use Psr\Http\Message\ResponseInterface;
 
 interface ViewInterface
 {
     /**
-     * @param array $array
+     * @param ViewModelInterface $model
+     * @param ResponseInterface $response
+     * @return ResponseInterface
      */
-    public function assign($array);
-
-    /**
-     * @param string                                    $template
-     * @param resoure|\Psr\Http\Message\StreamInterface $stream
-     *
-     * @return \Psr\Http\Message\StreamInterface
-     */
-    public function render($template, $stream = null);
+    public function marshalResponse(ViewModelInterface $model, ResponseInterface $response);
 }
