@@ -2,7 +2,6 @@
     "name":"sasezaki/backbeard",
     "description":"yet another DSLish minimum oriented framework for PHP",
     "license": "BSD-3-Clause",
-    "keywords": ["microframework", "psr7"],
     "authors": [
         {
             "name": "sasezaki",
