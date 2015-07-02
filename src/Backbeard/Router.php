@@ -21,7 +21,7 @@ class Router implements RouterInterface
     public function match($route, $uri)
     {
         $routeData = $this->routeParser->parse($route);
-        list($regex, $params) = $this->buildRegexForRoute($routeData);
+        list($regex, $params) = $this->buildRegexForRoute(current($routeData));
         if (preg_match("~^$regex$~", $uri, $match) !== 0) {
             array_shift($match);
 
