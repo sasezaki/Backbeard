@@ -3,22 +3,20 @@
 namespace Backbeard;
 
 use SfpStreamView\View as BaseView;
-use Psr\Http\Message\StreamInterface;
+use Psr\Http\Message\ResponseInterface;
 use Zend\Diactoros\Stream;
 
 class View extends BaseView implements ViewInterface
 {
-    /**
-     * {@inheritdoc}
-     */
-    public function render($template, $stream = null)
+    public function marshalResponse(ViewModelInterface $model, ResponseInterface $response)
     {
-        if ($stream instanceof StreamInterface) {
-            $stream = $stream->detach();
-        }
-
-        parent::render($template, $stream);
-
-        return new Stream($stream);
+        $template = $model->getTemplate();
+        $vars = $model->getVariables();
+        $stream = $response->getBody()->detach();
+        
+        $this->assign($vars);
+        $this->render($template, $stream);
+        
+        return $response->withBody(new Stream($stream));
     }
 }
