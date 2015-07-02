@@ -9,5 +9,8 @@ interface ViewModelInterface
      */
     public function getVariables();
     
+    /**
+     * @return string
+     */
     public function getTemplate();
 }

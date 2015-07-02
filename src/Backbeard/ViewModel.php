@@ -4,9 +4,20 @@ namespace Backbeard;
 
 class ViewModel implements ViewModelInterface
 {
+    /**
+     * @var array
+     */
     private $variables;
+    
+    /**
+     * @var string
+     */
     private $template;
     
+    /**
+     * @param array $variables
+     * @param string $template
+     */
     public function __construct($variables, $template)
     {
         $this->variables = $variables;
