@@ -175,10 +175,7 @@ class Dispatcher
         } elseif (is_array($actionResult)) {
             $template = $this->getTemplatePathResolver()->resolve($routeMatch);
 
-            $model = new ViewModel();
-            $model->setTemplate($template);
-            $model->setVariables($actionResult);
-
+            $model = new ViewModel($actionResult, $template);
             return $this->view->marshalResponse($model, $response);
         } elseif ($actionResult instanceof Response) {
             return $actionResult;
