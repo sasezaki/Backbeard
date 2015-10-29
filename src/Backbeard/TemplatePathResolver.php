@@ -6,6 +6,9 @@ class TemplatePathResolver implements TemplatePathResolverInterface
 {
     private $suffix = '.phtml';
 
+    /**
+     * @return string
+     */
     public function resolve(RouteMatch $routeMatch)
     {
         $name = $routeMatch->getMatchedRouteName();

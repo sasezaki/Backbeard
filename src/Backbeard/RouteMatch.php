@@ -3,7 +3,7 @@
 namespace Backbeard;
 
 /**
- * RouteInterface match result.
+ * Route match result.
  */
 class RouteMatch
 {
@@ -35,8 +35,6 @@ class RouteMatch
      * Set name of matched route.
      *
      * @param string $name
-     *
-     * @return RouteMatch
      */
     public function setMatchedRouteName($name)
     {

@@ -31,6 +31,9 @@ class Router implements RouterInterface
         return false;
     }
 
+    /**
+     * @return array
+     */
     private function buildRegexForRoute($routeData)
     {
         $regex = '';
