@@ -114,7 +114,7 @@ class Dispatcher
     }
 
     /**
-     * @return \SfpBackbeard\TemplatePathResolverInterface
+     * @return \Backbeard\TemplatePathResolverInterface
      */
     public function getTemplatePathResolver()
     {
@@ -125,6 +125,10 @@ class Dispatcher
         return $this->templatePathResolver;
     }
 
+    /**
+     * @return bool
+     * @throws InvalidArgumentException
+     */
     protected function dispatchByType($route, Request $request)
     {
         switch (gettype($route)) {
@@ -166,6 +170,9 @@ class Dispatcher
         }
     }
 
+    /**
+     * @return Response
+     */
     protected function handleActionResult(RouteMatch $routeMatch, $actionResult, Response $response)
     {
         if (is_string($actionResult)) {
