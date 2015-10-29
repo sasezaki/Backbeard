@@ -29,11 +29,6 @@ class Dispatcher
      */
     private $templatePathResolver;
 
-    /**
-     * @var \Psr\Http\Message\ResponseInterface
-     */
-    private $actionResponse;
-
     public function __construct(Generator $routing, ViewInterface $view, RouterInterface $router)
     {
         $this->routing = $routing;
@@ -45,7 +40,7 @@ class Dispatcher
      * @param Request  $request
      * @param Response $response
      *
-     * @return bool
+     * @return DispatchResultInterface
      */
     public function dispatch(Request $request, Response $response)
     {
@@ -89,28 +84,14 @@ class Dispatcher
                     continue;
                 }
 
-                $this->actionResponse = $this->handleActionResult($routeResult, $actionResult, $response);
+                $response = $this->handleActionResult($routeResult, $actionResult, $response);
 
-                return true;
+                return new DispatchResult(true, $response);
             }
             $this->routing->next();
         }
 
-        return false;
-    }
-
-    /**
-     * @throws \LogicException
-     *
-     * @return \Psr\Http\Message\ResponseInterface
-     */
-    public function getActionResponse()
-    {
-        if ($this->actionResponse instanceof Response) {
-            return $this->actionResponse;
-        }
-
-        throw new \LogicException("Don't call when dispatch return false");
+        return new DispatchResult(false);
     }
 
     /**

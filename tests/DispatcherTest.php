@@ -36,8 +36,8 @@ class DispatcherTest extends \PHPUnit_Framework_TestCase
             yield function () {return false;} => function () {};
         }), $this->view, $this->router);
         $result = $dispatcher->dispatch($request, $response);
-        $this->assertFalse($result);
-        $dispatcher->getActionResponse();
+        $this->assertFalse($result->isDispatched());
+        $result->getResponse();
     }
 
     public function testActionScope()
@@ -52,7 +52,7 @@ class DispatcherTest extends \PHPUnit_Framework_TestCase
             };
         }), $this->view, $this->router);
         $result = $dispatcher->dispatch($request, $response);
-        $this->assertTrue($result);
+        $this->assertTrue($result->isDispatched());
         $this->assertTrue($actionScopeResult['request'] instanceof ServerRequestInterface);
         $this->assertTrue($actionScopeResult['response'] instanceof ResponseInterface);
     }
@@ -75,8 +75,8 @@ class DispatcherTest extends \PHPUnit_Framework_TestCase
 
         $result = $dispatcher->dispatch($request, $response);
 
-        $this->assertTrue($result);
-        $response = $dispatcher->getActionResponse();
+        $this->assertTrue($result->isDispatched());
+        $response = $result->getResponse();
         $this->assertInstanceof(Response::class, $response);
         $this->assertSame('5', (string) $response->getBody());
 
@@ -84,7 +84,7 @@ class DispatcherTest extends \PHPUnit_Framework_TestCase
         $request = ServerRequestFactory::fromGlobals()->withUri(new Uri('http://example.com/bar/6'));
         $response = new Response();
         $result = $dispatcher->dispatch($request, $response);
-        $response = $dispatcher->getActionResponse();
+        $response = $result->getResponse();
         $this->assertInstanceof(Response::class, $response);
         $this->assertSame('6', (string) $response->getBody());
     }
@@ -104,16 +104,16 @@ class DispatcherTest extends \PHPUnit_Framework_TestCase
         $dispatcher3 = new Dispatcher($gen(), $this->view, $this->router);
 
         $result = $dispatcher1->dispatch($request, $response);
-        $this->assertFalse($result);
+        $this->assertFalse($result->isDispatched());
 
         $request = $request->withUri((new Uri())->withPath('/foo'))->withMethod('GET');
         $result = $dispatcher2->dispatch($request, $response);
-        $this->assertTrue($result);
+        $this->assertTrue($result->isDispatched());
         $this->assertSame('hello', (string) $response->getBody());
 
         $request = $request->withUri((new Uri())->withPath('/foo'))->withMethod('POST');
         $result = $dispatcher3->dispatch($request, $response);
-        $this->assertFalse($result);
+        $this->assertFalse($result->isDispatched());
 
         $gen = function () {
             yield ['GET' => '/foo',
@@ -132,12 +132,12 @@ class DispatcherTest extends \PHPUnit_Framework_TestCase
 
         $request = $request->withUri((new Uri())->withPath('/foo'))->withMethod('GET');
         $result = $dispatcher4->dispatch($request, $response);
-        $this->assertFalse($result);
+        $this->assertFalse($result->isDispatched());
 
         $request = $request->withUri((new Uri())->withPath('/foo'))->withMethod('GET');
         $request = $request->withHeader('User-Agent', 'Mozilla/5.0');
         $result = $dispatcher5->dispatch($request, $response);
-        $this->assertTrue($result);
+        $this->assertTrue($result->isDispatched());
     }
 
     public function testRoutingKeyHandleClosureAsMatcher()
@@ -149,7 +149,7 @@ class DispatcherTest extends \PHPUnit_Framework_TestCase
             yield function () {return true;} => function () {return 'bar';};
         }), $this->view, $this->router);
         $result = $dispatcher->dispatch($request, $response);
-        $response = $dispatcher->getActionResponse();
+        $response = $result->getResponse();
 
         $this->assertSame('bar', (string) $response->getBody());
     }
@@ -163,7 +163,7 @@ class DispatcherTest extends \PHPUnit_Framework_TestCase
             yield function () {return ['var1', 'var2'];} => function ($var1, $var2) {return $var1.$var2;};
         }), $this->view, $this->router);
         $result = $dispatcher->dispatch($request, $response);
-        $response = $dispatcher->getActionResponse();
+        $response = $result->getResponse();
         $this->assertSame('var1var2', (string) $response->getBody());
     }
 
@@ -176,7 +176,7 @@ class DispatcherTest extends \PHPUnit_Framework_TestCase
             yield function () {return new RouteMatch(['var1', 'var2']);} => function ($var1, $var2) {return $var1.$var2;};
         }), $this->view, $this->router);
         $result = $dispatcher->dispatch($request, $response);
-        $response = $dispatcher->getActionResponse();
+        $response = $result->getResponse();
         $this->assertSame('var1var2', (string) $response->getBody());
     }
 
@@ -206,7 +206,7 @@ class DispatcherTest extends \PHPUnit_Framework_TestCase
             };
         }), $this->view, $this->router);
         $result = $dispatcher->dispatch($request, $response);
-        $response2 = $dispatcher->getActionResponse();
+        $response2 = $result->getResponse();
         $this->assertNotSame(spl_object_hash($response), spl_object_hash($response2));
     }
 
@@ -220,7 +220,7 @@ class DispatcherTest extends \PHPUnit_Framework_TestCase
         }), $this->view, $this->router);
 
         $result = $dispatcher->dispatch($request, $response);
-        $response = $dispatcher->getActionResponse();
+        $response = $result->getResponse();
         $this->assertSame(503, $response->getStatusCode());
     }
 
@@ -234,7 +234,7 @@ class DispatcherTest extends \PHPUnit_Framework_TestCase
         }), $this->view, $this->router);
 
         $result = $dispatcher->dispatch($request, $response);
-        $response = $dispatcher->getActionResponse();
+        $response = $result->getResponse();
         $this->assertSame(503, $response->getStatusCode());
     }
 
@@ -251,7 +251,7 @@ class DispatcherTest extends \PHPUnit_Framework_TestCase
         }), $this->view, $this->router);
 
         $result = $dispatcher->dispatch($request, $response);
-        $response = $dispatcher->getActionResponse();
+        $response = $result->getResponse();
         $this->assertSame('a', (string) $response->getBody());
     }
 
@@ -266,7 +266,7 @@ class DispatcherTest extends \PHPUnit_Framework_TestCase
         }), $this->view, $this->router);
 
         $result = $dispatcher->dispatch($request, $response);
-        $response = $dispatcher->getActionResponse();
+        $response = $result->getResponse();
         $this->assertInstanceof(ResponseInterface::class, $response);
         $this->assertSame('var', (string) $response->getBody());
     }
@@ -283,7 +283,7 @@ class DispatcherTest extends \PHPUnit_Framework_TestCase
         }), $this->view, $this->router);
 
         $result = $dispatcher->dispatch($request, $response);
-        $response = $dispatcher->getActionResponse();
+        $response = $result->getResponse();
         $this->assertSame('oh matched', (string) $response->getBody());
     }
 
@@ -299,7 +299,7 @@ class DispatcherTest extends \PHPUnit_Framework_TestCase
         }), $this->view, $this->router);
 
         $result = $dispatcher->dispatch($request, $response);
-        $response = $dispatcher->getActionResponse();
+        $response = $result->getResponse();
 
         $this->assertSame('bar', (string) $response->getBody());
     }
@@ -325,7 +325,7 @@ class DispatcherTest extends \PHPUnit_Framework_TestCase
         }), $this->view, $this->router);
 
         $result = $dispatcher->dispatch($request, $response);
-        $response = $dispatcher->getActionResponse();
+        $response = $result->getResponse();
 
         $this->assertSame('foo', (string) $response->getBody());
     }
@@ -350,7 +350,7 @@ class DispatcherTest extends \PHPUnit_Framework_TestCase
         }), $this->view, $this->router);
 
         $result = $dispatcher->dispatch($request, $response);
-        $response = $dispatcher->getActionResponse();
+        $response = $result->getResponse();
         $this->assertSame('error is NULL', (string) $response->getBody());
     }
 }
