@@ -5,6 +5,9 @@ use Psr\Http\Message\ResponseInterface;
 
 interface ViewInterface
 {
+
+    public function factoryModel($vars, RouteMatch $routeMatch);
+
     /**
      * @param ViewModelInterface $model
      * @param ResponseInterface $response

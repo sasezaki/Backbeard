@@ -24,11 +24,6 @@ class Dispatcher
      */
     private $router;
 
-    /**
-     * @var TemplatePathResolverInterface
-     */
-    private $templatePathResolver;
-
     public function __construct(Generator $routing, ViewInterface $view, RouterInterface $router)
     {
         $this->routing = $routing;
@@ -95,18 +90,6 @@ class Dispatcher
     }
 
     /**
-     * @return \Backbeard\TemplatePathResolverInterface
-     */
-    public function getTemplatePathResolver()
-    {
-        if (!$this->templatePathResolver) {
-            $this->templatePathResolver = new TemplatePathResolver();
-        }
-
-        return $this->templatePathResolver;
-    }
-
-    /**
      * @return bool
      * @throws InvalidArgumentException
      */
@@ -158,12 +141,9 @@ class Dispatcher
     {
         if (is_string($actionResult)) {
             $response->getBody()->write($actionResult);
-
             return $response;
         } elseif (is_array($actionResult)) {
-            $template = $this->getTemplatePathResolver()->resolve($routeMatch);
-
-            $model = new ViewModel($actionResult, $template);
+            $model = $this->view->factoryModel($actionResult, $routeMatch);
             return $this->view->marshalResponse($model, $response);
         } elseif ($actionResult instanceof Response) {
             return $actionResult;
