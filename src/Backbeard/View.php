@@ -4,7 +4,6 @@ namespace Backbeard;
 
 use SfpStreamView\View as BaseView;
 use Psr\Http\Message\ResponseInterface;
-use Zend\Diactoros\Stream;
 
 class View extends BaseView implements ViewInterface
 {
@@ -12,11 +11,10 @@ class View extends BaseView implements ViewInterface
     {
         $template = $model->getTemplate();
         $vars = $model->getVariables();
-        $stream = $response->getBody()->detach();
         
         $this->assign($vars);
-        $this->render($template, $stream);
+        $this->renderResponse($template, $response);
         
-        return $response->withBody(new Stream($stream));
+        return $response;
     }
 }
