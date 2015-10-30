@@ -11,32 +11,13 @@ use Psr\Http\Message\ResponseInterface;
 
 class SfpStreamView implements ViewInterface
 {
+    use TemplatingViewTrait;
 
-    /**
-     * @var TemplatePathResolverInterface
-     */
-    private $templatePathResolver;
+    private $streamView;
 
     public function __construct(StreamView $streamView)
     {
         $this->streamView = $streamView;
-    }
-
-    /**
-     * @return TemplatePathResolverInterface
-     */
-    public function getTemplatePathResolver()
-    {
-        if (!$this->templatePathResolver) {
-            $this->templatePathResolver = new TemplatePathResolver();
-        }
-        return $this->templatePathResolver;
-    }
-
-    public function factoryModel($vars, RouteMatch $routeMatch)
-    {
-        $template = $this->getTemplatePathResolver()->resolve($routeMatch);
-        return new ViewModel($vars, $template);
     }
 
     public function marshalResponse(ViewModelInterface $model, ResponseInterface $response)
