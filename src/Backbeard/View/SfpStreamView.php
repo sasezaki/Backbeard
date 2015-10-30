@@ -1,11 +1,15 @@
 <?php
 
-namespace Backbeard;
+namespace Backbeard\View;
 
+use Backbeard\ViewInterface;
+use Backbeard\ViewModelInterface;
+use Backbeard\ViewModel;
+use Backbeard\RouteMatch;
 use SfpStreamView\View as StreamView;
 use Psr\Http\Message\ResponseInterface;
 
-class View implements ViewInterface
+class SfpStreamView implements ViewInterface
 {
 
     /**
@@ -19,7 +23,7 @@ class View implements ViewInterface
     }
 
     /**
-     * @return \Backbeard\TemplatePathResolverInterface
+     * @return TemplatePathResolverInterface
      */
     public function getTemplatePathResolver()
     {

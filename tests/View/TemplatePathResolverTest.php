@@ -1,8 +1,8 @@
 <?php
 
-namespace BackbeardTest;
+namespace BackbeardTest\View;
 
-use Backbeard\TemplatePathResolver;
+use Backbeard\View\TemplatePathResolver;
 use Backbeard\RouteMatch;
 
 class TemplatePathResolverTest extends \PHPUnit_Framework_TestCase

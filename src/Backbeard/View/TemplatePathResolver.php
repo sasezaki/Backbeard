@@ -1,6 +1,8 @@
 <?php
 
-namespace Backbeard;
+namespace Backbeard\View;
+
+use Backbeard\RouteMatch;
 
 class TemplatePathResolver implements TemplatePathResolverInterface
 {

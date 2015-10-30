@@ -5,7 +5,7 @@ namespace BackbeardTest;
 use Backbeard\Dispatcher;
 use Backbeard\ActionContinueInterface;
 use Backbeard\ValidationError;
-use Backbeard\View;
+use Backbeard\View\SfpStreamView;
 use Backbeard\Router;
 use Backbeard\RouteMatch;
 use Psr\Http\Message\ServerRequestInterface;
@@ -13,7 +13,7 @@ use Psr\Http\Message\ResponseInterface;
 use Zend\Diactoros\ServerRequestFactory;
 use Zend\Diactoros\Response;
 use Zend\Diactoros\Uri;
-use SfpStreamView\View as StreamView;
+use SfpStreamView\View as BaseStreamView;
 
 class DispatcherTest extends \PHPUnit_Framework_TestCase
 {
@@ -22,7 +22,7 @@ class DispatcherTest extends \PHPUnit_Framework_TestCase
 
     public function setUp()
     {
-        $this->view = new View(new StreamView(__DIR__.'/_files/views'));
+        $this->view = new SfpStreamView(new BaseStreamView(__DIR__.'/_files/views'));
         $this->router = new Router(new \FastRoute\RouteParser\Std());
     }
 
