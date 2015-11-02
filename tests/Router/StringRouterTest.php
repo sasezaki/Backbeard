@@ -1,17 +1,17 @@
 <?php
 
-namespace BackbeardTest;
+namespace BackbeardTest\Router;
 
-use Backbeard\Router;
+use Backbeard\Router\StringRouter;
 
-class RouterTest extends \PHPUnit_Framework_TestCase
+class StringRouterTest extends \PHPUnit_Framework_TestCase
 {
     /**
      * @expectedException \LogicException
      */
     public function testBuildRegexWillFailWhenSamePlaceFolder()
     {
-        $router = new Router(new \FastRoute\RouteParser\Std());
+        $router = new StringRouter(new \FastRoute\RouteParser\Std());
         $router->match('/foo/{id:[0-9]}/{id:[0-9]}', '/foo/bar');
     }
 }

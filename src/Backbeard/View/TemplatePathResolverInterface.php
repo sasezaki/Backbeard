@@ -2,9 +2,9 @@
 
 namespace Backbeard\View;
 
-use Backbeard\RouteMatch;
+use Backbeard\RoutingResult;
 
 interface TemplatePathResolverInterface
 {
-    public function resolve(RouteMatch $routeMatch);
+    public function resolve(RoutingResult $routingResult);
 }

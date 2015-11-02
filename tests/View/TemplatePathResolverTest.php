@@ -3,13 +3,13 @@
 namespace BackbeardTest\View;
 
 use Backbeard\View\TemplatePathResolver;
-use Backbeard\RouteMatch;
+use Backbeard\RoutingResult;
 
 class TemplatePathResolverTest extends \PHPUnit_Framework_TestCase
 {
     public function testIndexTranslatedIndex()
     {
-        $routeMatch = new RouteMatch(array());
+        $routeMatch = new RoutingResult(true, array());
         $resolver = new TemplatePathResolver();
 
         $routeMatch->setMatchedRouteName('/');
@@ -21,7 +21,7 @@ class TemplatePathResolverTest extends \PHPUnit_Framework_TestCase
 
     public function testSuffix()
     {
-        $routeMatch = new RouteMatch(array());
+        $routeMatch = new RoutingResult(true, array());
         $resolver = new TemplatePathResolver();
         $resolver->setSuffix('.unkown');
 

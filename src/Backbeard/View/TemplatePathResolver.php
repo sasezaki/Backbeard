@@ -2,7 +2,7 @@
 
 namespace Backbeard\View;
 
-use Backbeard\RouteMatch;
+use Backbeard\RoutingResult;
 
 class TemplatePathResolver implements TemplatePathResolverInterface
 {
@@ -11,9 +11,9 @@ class TemplatePathResolver implements TemplatePathResolverInterface
     /**
      * @return string
      */
-    public function resolve(RouteMatch $routeMatch)
+    public function resolve(RoutingResult $routingResult)
     {
-        $name = $routeMatch->getMatchedRouteName();
+        $name = $routingResult->getMatchedRouteName();
         if (strpos(strrev($name), '/') === 0) {
             return $name.'index'.$this->suffix;
         } else {

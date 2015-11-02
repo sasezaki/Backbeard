@@ -1,6 +1,6 @@
 <?php
 
-namespace Backbeard;
+namespace Backbeard\Router;
 
 /*
  * This class is borrowed from nikic's FastRoute
@@ -9,7 +9,7 @@ namespace Backbeard;
 
 use FastRoute\RouteParser\Std as RouteParser;
 
-class Router implements RouterInterface
+class StringRouter implements StringRouterInterface
 {
     private $routeParser;
 

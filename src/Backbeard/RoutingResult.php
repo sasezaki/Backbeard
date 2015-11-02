@@ -3,10 +3,15 @@
 namespace Backbeard;
 
 /**
- * Route match result.
+ * Routing Result.
  */
-class RouteMatch
+class RoutingResult
 {
+    /**
+     * @var bool
+     */
+    protected $matched;
+    
     /**
      * Match parameters.
      *
@@ -20,15 +25,22 @@ class RouteMatch
      * @var string
      */
     protected $matchedRouteName;
-
+    
     /**
      * Create a RouteMatch with given parameters.
      *
+     * @params bool $matched
      * @param array $params
      */
-    public function __construct(array $params)
+    public function __construct($matched, array $params)
     {
+        $this->matched = $matched;
         $this->params = $params;
+    }
+    
+    public function isMatched()
+    {
+        return $this->matched;
     }
 
     /**

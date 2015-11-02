@@ -4,10 +4,8 @@ namespace Backbeard\View;
 
 use Backbeard\ViewInterface;
 use Backbeard\ViewModelInterface;
-use Backbeard\ViewModel;
-use Backbeard\RouteMatch;
-use SfpStreamView\View as StreamView;
 use Psr\Http\Message\ResponseInterface;
+use SfpStreamView\View as StreamView;
 
 class SfpStreamView implements ViewInterface
 {

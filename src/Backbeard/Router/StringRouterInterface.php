@@ -1,8 +1,8 @@
 <?php
 
-namespace Backbeard;
+namespace Backbeard\Router;
 
-interface RouterInterface
+interface StringRouterInterface
 {
     /**
      * @param string $route

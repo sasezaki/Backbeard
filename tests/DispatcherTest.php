@@ -6,8 +6,8 @@ use Backbeard\Dispatcher;
 use Backbeard\ActionContinueInterface;
 use Backbeard\ValidationError;
 use Backbeard\View\SfpStreamView;
-use Backbeard\Router;
-use Backbeard\RouteMatch;
+use Backbeard\Router\StringRouter;
+use Backbeard\RoutingResult;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Zend\Diactoros\ServerRequestFactory;
@@ -23,7 +23,7 @@ class DispatcherTest extends \PHPUnit_Framework_TestCase
     public function setUp()
     {
         $this->view = new SfpStreamView(new BaseStreamView(__DIR__.'/_files/views'));
-        $this->router = new Router(new \FastRoute\RouteParser\Std());
+        $this->router = new StringRouter(new \FastRoute\RouteParser\Std());
     }
 
     /**
@@ -174,7 +174,7 @@ class DispatcherTest extends \PHPUnit_Framework_TestCase
         $response = new Response();
 
         $dispatcher = new Dispatcher(call_user_func(function () {
-            yield function () {return new RouteMatch(['var1', 'var2']);} => function ($var1, $var2) {return $var1.$var2;};
+            yield function () {return new RoutingResult(true, ['var1', 'var2']);} => function ($var1, $var2) {return $var1.$var2;};
         }), $this->view, $this->router);
         $result = $dispatcher->dispatch($request, $response);
         $response = $result->getResponse();
@@ -209,6 +209,21 @@ class DispatcherTest extends \PHPUnit_Framework_TestCase
         $result = $dispatcher->dispatch($request, $response);
         $response2 = $result->getResponse();
         $this->assertNotSame(spl_object_hash($response), spl_object_hash($response2));
+    }
+    
+    /**
+     * @expectedException \BadMethodCallException
+     */
+    public function testActionOfUndefinedTypeShouldRaiseException()
+    {
+        $request = ServerRequestFactory::fromGlobals();
+        $response = new Response();
+        
+        $dispatcher = new Dispatcher(call_user_func(function () {
+            yield function () {return true;} => 'string';
+        }), $this->view, $this->router);
+        
+        $dispatcher->dispatch($request, $response);
     }
 
     public function testIntActionAsStatusCode()

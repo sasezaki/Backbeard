@@ -2,7 +2,7 @@
 
 namespace Backbeard\View;
 
-use Backbeard\RouteMatch;
+use Backbeard\RoutingResult;
 use Backbeard\ViewModel;
 
 trait TemplatingViewTrait
@@ -11,11 +11,6 @@ trait TemplatingViewTrait
      * @var TemplatePathResolverInterface
      */
     private $templatePathResolver;
-
-    public function setTemplatePathResovler(TemplatePathResolverInterface $templatePathResolver)
-    {
-        $this->templatePathResolver = $templatePathResolver;
-    }
 
     /**
      * @return TemplatePathResolverInterface
@@ -28,9 +23,9 @@ trait TemplatingViewTrait
         return $this->templatePathResolver;
     }
 
-    public function factoryModel($vars, RouteMatch $routeMatch)
+    public function factoryModel($vars, RoutingResult $routingResult)
     {
-        $template = $this->getTemplatePathResolver()->resolve($routeMatch);
+        $template = $this->getTemplatePathResolver()->resolve($routingResult);
         return new ViewModel($vars, $template);
     }
 }

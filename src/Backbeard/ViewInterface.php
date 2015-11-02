@@ -1,12 +1,13 @@
 <?php
 
 namespace Backbeard;
+
 use Psr\Http\Message\ResponseInterface;
 
 interface ViewInterface
 {
 
-    public function factoryModel($vars, RouteMatch $routeMatch);
+    public function factoryModel($vars, RoutingResult $routingResult);
 
     /**
      * @param ViewModelInterface $model
