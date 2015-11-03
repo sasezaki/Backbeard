@@ -1,9 +1,9 @@
 <?php
 
-namespace Backbeard\View;
+namespace Backbeard\View\Templating;
 
 use Backbeard\RoutingResult;
-use Backbeard\ViewModel;
+use Backbeard\View\ViewModel;
 
 trait TemplatingViewTrait
 {
@@ -23,7 +23,7 @@ trait TemplatingViewTrait
         return $this->templatePathResolver;
     }
 
-    public function marshalViewModel(array $vars, RoutingResult $routingResult)
+    public function marshalViewModel(RoutingResult $routingResult, array $vars)
     {
         $template = $this->getTemplatePathResolver()->resolve($routingResult);
         return new ViewModel($vars, $template);

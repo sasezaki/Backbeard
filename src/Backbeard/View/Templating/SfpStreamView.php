@@ -1,9 +1,9 @@
 <?php
 
-namespace Backbeard\View;
+namespace Backbeard\View\Templating;
 
-use Backbeard\ViewInterface;
-use Backbeard\ViewModelInterface;
+use Backbeard\View\ViewInterface;
+use Backbeard\View\ViewModelInterface;
 use Psr\Http\Message\ResponseInterface;
 use SfpStreamView\View as StreamView;
 

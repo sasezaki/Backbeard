@@ -1,18 +1,19 @@
 <?php
 
-namespace Backbeard;
+namespace Backbeard\View;
 
 use Psr\Http\Message\ResponseInterface;
+use Backbeard\RoutingResult;
 
 interface ViewInterface
 {
 
     /**
-     * @param array $actionReturn
      * @param RoutingResult $routingResult
+     * @param array $actionReturn
      * @return ViewModelInterface
      */
-    public function marshalViewModel(array $actionReturn, RoutingResult $routingResult);
+    public function marshalViewModel(RoutingResult $routingResult, array $actionReturn);
 
     /**
      * @param ViewModelInterface $model

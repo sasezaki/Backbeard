@@ -5,6 +5,8 @@ namespace Backbeard;
 use Generator;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
+use Backbeard\View\ViewInterface;
+use Backbeard\View\ViewModelInterface;
 use Backbeard\Router\StringRouterInterface;
 use Backbeard\Router\ArrayRouterInterface;
 use InvalidArgumentException;
@@ -31,13 +33,18 @@ class Dispatcher implements DispatcherInterface
      */
     protected $arrayRouter;
 
-    
+    /**
+     * @param Generator $routing
+     * @param ViewInterface $view
+     * @param StringRouterInterface $stringRouter
+     * @param ArrayRouterInterface $arrayRouter
+     */
     public function __construct(Generator $routing, ViewInterface $view, StringRouterInterface $stringRouter, ArrayRouterInterface $arrayRouter = null)
     {
         $this->routing = $routing;
         $this->view = $view;
         $this->stringRouter = $stringRouter;
-        $this->arrayRouter = ($arrayRouter) ?: new Router\ArrayRouter($stringRouter);
+        $this->arrayRouter = $arrayRouter;
     }
 
     /**
@@ -58,7 +65,7 @@ class Dispatcher implements DispatcherInterface
             // If Routing Result is Matched, call action
             if ($routingResult->isMatched()) {
                 
-                // inject Request & Response
+                // bind Request & Response
                 if ($action instanceof \Closure) {
                     $actionScope = new ClosureActionScope($request, $response);
                     $action = $action->bindTo($actionScope);
@@ -169,7 +176,7 @@ class Dispatcher implements DispatcherInterface
         if (is_string($actionReturn)) {
             $response->getBody()->write($actionReturn);
         } elseif (is_array($actionReturn)) {
-            $model = $this->view->marshalViewModel($actionReturn, $routingResult);
+            $model = $this->view->marshalViewModel($routingResult, $actionReturn);
             $response = $this->view->marshalResponse($model, $response);
         } elseif ($actionReturn instanceof ViewModelInterface) {
             $response = $this->view->marshalResponse($actionReturn, $response);

@@ -1,6 +1,6 @@
 <?php
 
-namespace Backbeard\View;
+namespace Backbeard\View\Templating;
 
 use Backbeard\RoutingResult;
 

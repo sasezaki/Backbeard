@@ -1,6 +1,6 @@
 <?php
 
-namespace Backbeard;
+namespace Backbeard\View;
 
 class ViewModel implements ViewModelInterface
 {
@@ -18,7 +18,7 @@ class ViewModel implements ViewModelInterface
      * @param array $variables
      * @param string $template
      */
-    public function __construct($variables, $template)
+    public function __construct(array $variables, $template)
     {
         $this->variables = $variables;
         $this->template  = $template;

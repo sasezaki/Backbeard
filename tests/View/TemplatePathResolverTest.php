@@ -2,7 +2,7 @@
 
 namespace BackbeardTest\View;
 
-use Backbeard\View\TemplatePathResolver;
+use Backbeard\View\Templating\TemplatePathResolver;
 use Backbeard\RoutingResult;
 
 class TemplatePathResolverTest extends \PHPUnit_Framework_TestCase
