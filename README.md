@@ -48,7 +48,9 @@ $routingFactory = function ($serviceLocator) {
           }
         }
       ]
-    ] => 418; // status code "I'm a teapot"
+    ] => function () {
+        return $this->getResponse()->withStatus(418);
+    }; // status code "I'm a teapot"
 
     yield (ServerRequestInterface $request) {
 		return true;

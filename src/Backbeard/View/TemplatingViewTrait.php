@@ -23,7 +23,7 @@ trait TemplatingViewTrait
         return $this->templatePathResolver;
     }
 
-    public function factoryModel($vars, RoutingResult $routingResult)
+    public function marshalViewModel(array $vars, RoutingResult $routingResult)
     {
         $template = $this->getTemplatePathResolver()->resolve($routingResult);
         return new ViewModel($vars, $template);

@@ -14,6 +14,7 @@ use Zend\Diactoros\ServerRequestFactory;
 use Zend\Diactoros\Response;
 use Zend\Diactoros\Uri;
 use SfpStreamView\View as BaseStreamView;
+use Backbeard\ViewModel;
 
 class DispatcherTest extends \PHPUnit_Framework_TestCase
 {
@@ -212,7 +213,7 @@ class DispatcherTest extends \PHPUnit_Framework_TestCase
     }
     
     /**
-     * @expectedException \BadMethodCallException
+     * @expectedException \UnexpectedValueException
      */
     public function testActionOfUndefinedTypeShouldRaiseException()
     {
@@ -226,27 +227,43 @@ class DispatcherTest extends \PHPUnit_Framework_TestCase
         $dispatcher->dispatch($request, $response);
     }
 
-    public function testIntActionAsStatusCode()
+    // @deprecated
+//     public function testIntActionAsStatusCode()
+//     {
+//         $request = ServerRequestFactory::fromGlobals();
+//         $response = new Response();
+
+//         $dispatcher = new Dispatcher(call_user_func(function () {
+//             yield function () {return true;} => $response->withStatus(503);
+//         }), $this->view, $this->router);
+
+//         $result = $dispatcher->dispatch($request, $response);
+//         $response = $result->getResponse();
+//         $this->assertSame(503, $response->getStatusCode());
+//     }
+
+    public function testActionReturnIsViewModel()
     {
         $request = ServerRequestFactory::fromGlobals();
         $response = new Response();
-
+        
         $dispatcher = new Dispatcher(call_user_func(function () {
-            yield function () {return true;} => 503;
+            yield function () {return true;} => function () {
+                return new ViewModel(['key' => 'foo'], '/test.phtml');
+            };
         }), $this->view, $this->router);
-
+        
         $result = $dispatcher->dispatch($request, $response);
-        $response = $result->getResponse();
-        $this->assertSame(503, $response->getStatusCode());
+        $response = $result->getResponse();        
     }
-
-    public function testActionResultIsIntUsedAsStatusCode()
+    
+    public function testActionReturnIsIntUsedAsStatusCode()
     {
         $request = ServerRequestFactory::fromGlobals();
         $response = new Response();
 
         $dispatcher = new Dispatcher(call_user_func(function () {
-            yield function () {return true;} => function () {return 503;};
+            yield function () {return true;} => function () {return $this->getResponse()->withStatus(503);};
         }), $this->view, $this->router);
 
         $result = $dispatcher->dispatch($request, $response);

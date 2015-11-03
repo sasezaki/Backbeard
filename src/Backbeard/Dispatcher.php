@@ -49,8 +49,14 @@ class Dispatcher implements DispatcherInterface
 
             // If Routing Result is Matched, call action
             if ($routingResult->isMatched()) {
+                
+                // inject Request & Response
+                if ($action instanceof \Closure) {
+                    $actionScope = new ClosureActionScope($request, $response);
+                    $action = $action->bindTo($actionScope);
+                }
 
-                $actionReturn = $this->callAction($request, $response, $routingResult, $action);
+                $actionReturn = $this->callAction($routingResult, $action);
 
                 // Should We continue routing ?
                 if ($actionReturn === false) {
@@ -86,15 +92,17 @@ class Dispatcher implements DispatcherInterface
         }
         
         if ($routingReturn !== false) {
-            if ($routingReturn instanceof RoutingResult) {
+            if ($routingReturn === true) {
+                $routingResult = new RoutingResult(true, array());
+                $routingResult->setMatchedRouteName($request->getUri()->getPath());
+            } elseif ($routingReturn instanceof RoutingResult) {
                 return $routingReturn;
             } elseif (is_array($routingReturn)) {
                 $params = $routingReturn;
                 $routingResult = new RoutingResult(true, $params);
                 $routingResult->setMatchedRouteName($request->getUri()->getPath());
             } else {
-                $routingResult = new RoutingResult(true, array());
-                $routingResult->setMatchedRouteName($request->getUri()->getPath());
+                throw new \UnexpectedvalueException('Invalid router type is passed');                
             }
         } else {
             $routingResult = new RoutingResult(false, []);
@@ -151,21 +159,17 @@ class Dispatcher implements DispatcherInterface
      * @param Response $response
      * @param RoutingResult $routingResult
      * @param mixed $action
-     * @throws \BadMethodCallException
+     * @throws \UnexpectedValueException
      * @return Response
      */
-    protected function callAction(Request $request, Response $response, RoutingResult $routingResult, $action)
+    protected function callAction(RoutingResult $routingResult, $action)
     {
-        if (is_int($action)) {
-            $actionReturn = $response->withStatus($action);
-        } elseif (is_callable($action)) {
+        if (is_callable($action)) {
             $params = $routingResult->getParams();
-            $actionScope = new ClosureActionScope($request, $response);
-            $action = $action->bindTo($actionScope);
             $actionReturn = ($params) ?
                 call_user_func_array($action, $params) : call_user_func($action, $routingResult);
         } else {
-            throw new \BadMethodCallException('Unknown Action type');
+            throw new \UnexpectedValueException('Unknown Action type');
         }
         
         return $actionReturn;
@@ -178,14 +182,13 @@ class Dispatcher implements DispatcherInterface
     {
         if (is_string($actionReturn)) {
             $response->getBody()->write($actionReturn);
-            return $response;
         } elseif (is_array($actionReturn)) {
-            $model = $this->view->factoryModel($actionReturn, $routingResult);
-            return $this->view->marshalResponse($model, $response);
+            $model = $this->view->marshalViewModel($actionReturn, $routingResult);
+            $response = $this->view->marshalResponse($model, $response);
+        } elseif ($actionReturn instanceof ViewModelInterface) {
+            $response = $this->view->marshalResponse($actionReturn, $response);
         } elseif ($actionReturn instanceof Response) {
-            return $actionReturn;
-        } elseif (is_int($actionReturn)) {
-            return $response->withStatus($actionReturn);
+            $response = $actionReturn;
         }
 
         return $response;

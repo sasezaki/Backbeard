@@ -7,7 +7,12 @@ use Psr\Http\Message\ResponseInterface;
 interface ViewInterface
 {
 
-    public function factoryModel($vars, RoutingResult $routingResult);
+    /**
+     * @param array $actionReturn
+     * @param RoutingResult $routingResult
+     * @return ViewModelInterface
+     */
+    public function marshalViewModel(array $actionReturn, RoutingResult $routingResult);
 
     /**
      * @param ViewModelInterface $model
