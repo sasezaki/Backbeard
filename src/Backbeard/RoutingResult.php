@@ -32,7 +32,7 @@ class RoutingResult
      * @params bool $matched
      * @param array $params
      */
-    public function __construct($matched, array $params)
+    public function __construct($matched, array $params = [])
     {
         $this->matched = $matched;
         $this->params = $params;
