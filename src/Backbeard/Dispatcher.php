@@ -6,6 +6,7 @@ use Generator;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
 use Backbeard\Router\StringRouterInterface;
+use Backbeard\Router\ArrayRouterInterface;
 use InvalidArgumentException;
 
 class Dispatcher implements DispatcherInterface
@@ -18,18 +19,25 @@ class Dispatcher implements DispatcherInterface
     /**
      * @var ViewInterface
      */
-    private $view;
+    protected $view;
 
     /**
      * @var StringRouterInterface
      */
-    private $stringRouter;
+    protected $stringRouter;
 
-    public function __construct(Generator $routing, ViewInterface $view, StringRouterInterface $router)
+    /**
+     * @var ArrayRouterInterface
+     */
+    protected $arrayRouter;
+
+    
+    public function __construct(Generator $routing, ViewInterface $view, StringRouterInterface $stringRouter, ArrayRouterInterface $arrayRouter = null)
     {
         $this->routing = $routing;
         $this->view = $view;
-        $this->stringRouter = $router;
+        $this->stringRouter = $stringRouter;
+        $this->arrayRouter = ($arrayRouter) ?: new Router\ArrayRouter($stringRouter);
     }
 
     /**
@@ -94,13 +102,13 @@ class Dispatcher implements DispatcherInterface
         if ($routingReturn !== false) {
             if ($routingReturn === true) {
                 $routingResult = new RoutingResult(true, array());
-                $routingResult->setMatchedRouteName($request->getUri()->getPath());
-            } elseif ($routingReturn instanceof RoutingResult) {
-                return $routingReturn;
+                $routingResult->setMatchedRouteName($request->getUri()->getPath());            
             } elseif (is_array($routingReturn)) {
                 $params = $routingReturn;
                 $routingResult = new RoutingResult(true, $params);
                 $routingResult->setMatchedRouteName($request->getUri()->getPath());
+            } elseif ($routingReturn instanceof RoutingResult) {
+                return $routingReturn;
             } else {
                 throw new \UnexpectedvalueException('Invalid router type is passed');                
             }
@@ -112,8 +120,10 @@ class Dispatcher implements DispatcherInterface
     }
 
     /**
-     * @return bool
+     * @param mixed $route
+     * @param Request $request
      * @throws InvalidArgumentException
+     * @return array|false
      */
     protected function dispatchRoutingByType($route, Request $request)
     {
@@ -121,34 +131,7 @@ class Dispatcher implements DispatcherInterface
             case 'string':
                 return $this->stringRouter->match($route, $request->getUri()->getPath());
             case 'array':
-                $httpMethod = key($route);
-                $stringRoute = current($route);
-
-                if (in_array($httpMethod, ['GET', 'POST', 'PUT', 'DELETE'])) {
-                    if ($httpMethod !== $request->getMethod()) {
-                        return false;
-                    }
-                }
-
-                $match = $this->stringRouter->match($stringRoute, $request->getUri()->getPath());
-
-                if ($match === false) {
-                    return false;
-                }
-
-                array_shift($route);
-
-                foreach ($route as $method => $rules) {
-                    $getter = 'get'.ucfirst($method);
-                    foreach ($rules as $param => $callback) {
-                        $value = call_user_func([$request, $getter], $param);
-                        if (!$callback($value)) {
-                            return false;
-                        }
-                    }
-                }
-
-                return true;
+                return $this->arrayRouter->match($route, $request);
             default:
                 throw new InvalidArgumentException('Invalid router type is passed');
         }
@@ -176,7 +159,10 @@ class Dispatcher implements DispatcherInterface
     }
 
     /**
-     * @return Response
+     * @param RoutingResult $routingResult
+     * @param mixed $actionReturn
+     * @param Response $response
+     * @return mixed
      */
     protected function handleActionReturn(RoutingResult $routingResult, $actionReturn, Response $response)
     {

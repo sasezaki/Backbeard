@@ -15,16 +15,19 @@ use Zend\Diactoros\Response;
 use Zend\Diactoros\Uri;
 use SfpStreamView\View as BaseStreamView;
 use Backbeard\ViewModel;
+use Backbeard\Router\ArrayRouter;
 
 class DispatcherTest extends \PHPUnit_Framework_TestCase
 {
     private $view;
     private $router;
+    private $arrayRouter;
 
     public function setUp()
     {
         $this->view = new SfpStreamView(new BaseStreamView(__DIR__.'/_files/views'));
-        $this->router = new StringRouter(new \FastRoute\RouteParser\Std());
+        $this->router = $stringRouter = new StringRouter(new \FastRoute\RouteParser\Std());
+        $this->arrayRouter = new ArrayRouter($stringRouter);
     }
 
     /**
