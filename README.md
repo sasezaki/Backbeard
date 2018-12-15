@@ -20,7 +20,7 @@ use Psr\Http\Message\ResponseInterface;
 use Backbeard\Dispatcher;
 use Backbeard\ValidationError;
 
-$routingFactory = function ($serviceLocator) {
+$routingFactory = function ($container) {
     yield '/hello' => 'hello';
 
     $error = (yield ['POST' => '/entry/{id:[0-9]}'] => function ($id) {
@@ -49,7 +49,7 @@ $routingFactory = function ($serviceLocator) {
         }
       ]
     ] => function () {
-        return $this->getResponse()->withStatus(418);
+        return $this->getResponseFactory()->createResponse(418);
     }; // status code "I'm a teapot"
 
     yield (ServerRequestInterface $request) {
@@ -60,7 +60,7 @@ $routingFactory = function ($serviceLocator) {
     };
 };
 
-(new Dispatcher($routingFactory($serviceLocator)))->dispatch(new Request, new Response);
+(new Dispatcher($routingFactory($container)))->dispatch(new Request);
 ```
 
 ## Install with composer

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Backbeard;
 
 /**
@@ -11,13 +13,13 @@ class RoutingResult
      * @var bool
      */
     protected $matched;
-    
+
     /**
      * Match parameters.
      *
      * @var array
      */
-    protected $params = array();
+    protected $params = [];
 
     /**
      * Matched route name.
@@ -25,50 +27,41 @@ class RoutingResult
      * @var string
      */
     protected $matchedRouteName;
-    
+
     /**
      * Create a RouteMatch with given parameters.
-     *
-     * @params bool $matched
-     * @param array $params
      */
-    public function __construct($matched, array $params = [])
+    public function __construct(bool $matched, array $params = [])
     {
         $this->matched = $matched;
         $this->params = $params;
     }
-    
-    public function isMatched()
+
+    public function isMatched() : bool
     {
         return $this->matched;
     }
 
     /**
      * Set name of matched route.
-     *
-     * @param string $name
      */
-    public function setMatchedRouteName($name)
+    public function setMatchedRouteName(string $name) : void
     {
         $this->matchedRouteName = $name;
     }
 
     /**
      * Get name of matched route.
-     *
-     * @return string
      */
-    public function getMatchedRouteName()
+    public function getMatchedRouteName() : string
     {
         return $this->matchedRouteName;
     }
 
     /**
      * Get all parameters.
-     *
-     * @return array
      */
-    public function getParams()
+    public function getParams() : array
     {
         return $this->params;
     }

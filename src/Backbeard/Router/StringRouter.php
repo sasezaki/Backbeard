@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Backbeard\Router;
 
 /*
@@ -18,7 +20,7 @@ class StringRouter implements StringRouterInterface
         $this->routeParser = $routeParser;
     }
 
-    public function match($route, $uri)
+    public function match($route, $uri) : ?array
     {
         $routeData = $this->routeParser->parse($route);
         list($regex, $params) = $this->buildRegexForRoute(current($routeData));
@@ -28,13 +30,10 @@ class StringRouter implements StringRouterInterface
             return $match;
         }
 
-        return false;
+        return null;
     }
 
-    /**
-     * @return array
-     */
-    private function buildRegexForRoute($routeData)
+    private function buildRegexForRoute($routeData) : array
     {
         $regex = '';
         $variables = [];
@@ -46,7 +45,8 @@ class StringRouter implements StringRouterInterface
             list($varName, $regexPart) = $part;
             if (isset($variables[$varName])) {
                 throw new \LogicException(sprintf(
-                    'Cannot use the same placeholder "%s" twice', $varName
+                    'Cannot use the same placeholder "%s" twice',
+                    $varName
                 ));
             }
             $variables[$varName] = $varName;
