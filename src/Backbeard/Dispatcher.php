@@ -1,15 +1,19 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Backbeard;
 
 use Generator;
-use Psr\Http\Message\ServerRequestInterface as Request;
-use Psr\Http\Message\ResponseInterface as Response;
+use InvalidArgumentException;
+use Psr\Http\Message\ResponseFactoryInterface;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Server\RequestHandlerInterface;
 use Backbeard\View\ViewInterface;
 use Backbeard\View\ViewModelInterface;
 use Backbeard\Router\StringRouterInterface;
 use Backbeard\Router\ArrayRouterInterface;
-use InvalidArgumentException;
 
 class Dispatcher implements DispatcherInterface
 {
@@ -34,26 +38,20 @@ class Dispatcher implements DispatcherInterface
     protected $arrayRouter;
 
     /**
-     * @param Generator $routing
-     * @param ViewInterface $view
-     * @param StringRouterInterface $stringRouter
-     * @param ArrayRouterInterface $arrayRouter
+     * @var ResponseFactoryInterface
      */
-    public function __construct(Generator $routing, ViewInterface $view, StringRouterInterface $stringRouter, ArrayRouterInterface $arrayRouter = null)
+    private $responseFactory;
+
+    public function __construct(Generator $routing, ViewInterface $view, StringRouterInterface $stringRouter, ArrayRouterInterface $arrayRouter = null, ResponseFactoryInterface $responseFactory)
     {
         $this->routing = $routing;
         $this->view = $view;
         $this->stringRouter = $stringRouter;
         $this->arrayRouter = $arrayRouter;
+        $this->responseFactory = $responseFactory;
     }
 
-    /**
-     * @param Request  $request
-     * @param Response $response
-     *
-     * @return DispatchResultInterface
-     */
-    public function dispatch(Request $request, Response $response)
+    public function dispatch(ServerRequestInterface $request) : ?ResponseInterface
     {
         while ($this->routing->valid()) {
             $route = $this->routing->key();
@@ -63,11 +61,10 @@ class Dispatcher implements DispatcherInterface
             $routingResult = $this->dispatchRouting($route, $request);
 
             // If Routing Result is Matched, call action
-            if ($routingResult->isMatched()) {
-                
-                // bind Request & Response
+            if ($routingResult instanceof RoutingResult) {
+                // bind Request & ResponseFactory
                 if ($action instanceof \Closure) {
-                    $actionScope = new ClosureActionScope($request, $response);
+                    $actionScope = new ClosureActionScope($request, $this->responseFactory);
                     $action = $action->bindTo($actionScope);
                 }
 
@@ -81,58 +78,48 @@ class Dispatcher implements DispatcherInterface
                     $this->routing->send($actionReturn);
                     continue;
                 }
-                
-                $response = $this->handleActionReturn($routingResult, $actionReturn, $response);
 
-                return new DispatchResult(true, $response);
+                return $this->handleActionReturn($routingResult, $actionReturn);
             }
-            
+
             $this->routing->next();
         }
 
-        return new DispatchResult(false);
+        return null;
     }
-    
-    /**
-     * @param mixed $route
-     * @param Request $request
-     * @return RoutingResult
-     */
-    protected function dispatchRouting($route, Request $request)
+
+    protected function dispatchRouting($route, ServerRequestInterface $request) : ?RoutingResult
     {
         if (is_callable($route)) {
-            $routingReturn = call_user_func($route, $request);
-        } else {
-            $routingReturn = $this->dispatchRoutingByType($route, $request);
-        }
-        
-        if ($routingReturn !== false) {
-            if ($routingReturn === true) {
-                $routingResult = new RoutingResult(true, array());
-                $routingResult->setMatchedRouteName($request->getUri()->getPath());            
-            } elseif (is_array($routingReturn)) {
-                $params = $routingReturn;
-                $routingResult = new RoutingResult(true, $params);
-                $routingResult->setMatchedRouteName($request->getUri()->getPath());
-            } elseif ($routingReturn instanceof RoutingResult) {
-                return $routingReturn;
-            } else {
-                throw new \UnexpectedvalueException('Invalid router type is passed');                
+            $routingReturn = $route($request);
+            if ($routingReturn === false) {
+                return null;
             }
         } else {
-            $routingResult = new RoutingResult(false, []);
+            $routingReturn = $this->dispatchRoutingByType($route, $request);
+            if ($routingReturn === null) {
+                return null;
+            }
         }
-        
+
+        if ($routingReturn === true) {
+            $routingResult = new RoutingResult(true, []);
+            $routingResult->setMatchedRouteName($request->getUri()->getPath());
+        } elseif (is_array($routingReturn)) {
+            $params = $routingReturn;
+            $routingResult = new RoutingResult(true, $params);
+            $routingResult->setMatchedRouteName($request->getUri()->getPath());
+        } elseif ($routingReturn instanceof RoutingResult) {
+            return $routingReturn;
+        } else {
+            throw new \UnexpectedvalueException('Invalid router type is passed');
+        }
+
+
         return $routingResult;
     }
 
-    /**
-     * @param mixed $route
-     * @param Request $request
-     * @throws InvalidArgumentException
-     * @return array|false
-     */
-    protected function dispatchRoutingByType($route, Request $request)
+    protected function dispatchRoutingByType($route, ServerRequestInterface $request) : ?array
     {
         switch (gettype($route)) {
             case 'string':
@@ -143,45 +130,29 @@ class Dispatcher implements DispatcherInterface
                 throw new InvalidArgumentException('Invalid router type is passed');
         }
     }
-    
-    /**
-     * @param Request $request
-     * @param Response $response
-     * @param RoutingResult $routingResult
-     * @param mixed $action
-     * @throws \UnexpectedValueException
-     * @return Response
-     */
-    protected function callAction(RoutingResult $routingResult, $action)
+
+    protected function callAction(RoutingResult $routingResult, callable $action)
     {
-        if (is_callable($action)) {
-            $params = $routingResult->getParams();
-            $actionReturn = ($params) ?
-                call_user_func_array($action, $params) : call_user_func($action, $routingResult);
-        } else {
-            throw new \UnexpectedValueException('Unknown Action type');
-        }
-        
+        $params = $routingResult->getParams();
+        $actionReturn = ($params) ? $action(...$params) : $action($routingResult);
+
         return $actionReturn;
     }
 
-    /**
-     * @param RoutingResult $routingResult
-     * @param mixed $actionReturn
-     * @param Response $response
-     * @return mixed
-     */
-    protected function handleActionReturn(RoutingResult $routingResult, $actionReturn, Response $response)
+    protected function handleActionReturn(RoutingResult $routingResult, $actionReturn) : ResponseInterface
     {
         if (is_string($actionReturn)) {
+            $response = $this->responseFactory->createResponse();
             $response->getBody()->write($actionReturn);
         } elseif (is_array($actionReturn)) {
             $model = $this->view->marshalViewModel($routingResult, $actionReturn);
-            $response = $this->view->marshalResponse($model, $response);
+            $response = $this->view->marshalResponse($model);
         } elseif ($actionReturn instanceof ViewModelInterface) {
-            $response = $this->view->marshalResponse($actionReturn, $response);
-        } elseif ($actionReturn instanceof Response) {
+            $response = $this->view->marshalResponse($actionReturn);
+        } elseif ($actionReturn instanceof ResponseInterface) {
             $response = $actionReturn;
+        } else {
+            throw new \RuntimeException('Unexpected Action Return type');
         }
 
         return $response;

@@ -2,185 +2,220 @@
 
 namespace BackbeardTest;
 
+use Backbeard\ClosureActionScope;
 use Backbeard\Dispatcher;
 use Backbeard\ActionContinueInterface;
 use Backbeard\ValidationError;
 use Backbeard\Router\StringRouter;
 use Backbeard\Router\ArrayRouter;
 use Backbeard\RoutingResult;
+use Backbeard\View\ViewInterface;
+use Backbeard\View\ViewModelInterface;
+use Psr\Http\Message\ResponseFactoryInterface;
+use Psr\Http\Message\ServerRequestFactoryInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
-use Zend\Diactoros\ServerRequestFactory;
-use Zend\Diactoros\Response;
-use Zend\Diactoros\Uri;
+use Psr\Http\Message\UriFactoryInterface;
+use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\MockObject\MockObject;
 
-class DispatcherTest extends \PHPUnit_Framework_TestCase
+class DispatcherTest extends TestCase
 {
+    /** @var ViewInterface|MockObject */
     private $view;
     private $stringRouter;
     private $arrayRouter;
 
+    /** @var ServerRequestFactoryInterface */
+    private $requestFactory;
+
+    /** @var UriFactoryInterface */
+    private $uriFactory;
+
+    /** @var ResponseFactoryInterface */
+    private $responseFactory;
+
     public function setUp()
     {
-        $view = $this->getMock('\\Backbeard\View\\ViewInterface');
-        
-        $this->view = $view;
+        $this->view = $this->getViewMock();
         $this->stringRouter = $stringRouter = new StringRouter(new \FastRoute\RouteParser\Std());
         $this->arrayRouter = new ArrayRouter($stringRouter);
+
+        $this->requestFactory = new \Zend\Diactoros\ServerRequestFactory();
+        $this->uriFactory = new \Zend\Diactoros\UriFactory;
+        $this->responseFactory = new \Zend\Diactoros\ResponseFactory;
     }
 
-    /**
-     * @expectedException \LogicException
-     */
-    public function testReturnFalseWhenNotMatched()
+    private function getViewMock() : MockObject
     {
-        $request = ServerRequestFactory::fromGlobals();
-        $response = new Response();
-        $dispatcher = new Dispatcher(call_user_func(function () {
-            yield function () {return false;} => function () {};
-        }), $this->view, $this->stringRouter, $this->arrayRouter);
-        $result = $dispatcher->dispatch($request, $response);
-        $this->assertFalse($result->isDispatched());
-        $result->getResponse();
+        $mockBuilder = $this->getMockBuilder(ViewInterface::class);
+        $mockBuilder->setMethods(['marshalViewModel', 'marshalResponse']);
+        $view = $mockBuilder->getMock();
+
+        $view->method('marshalViewModel')
+            ->willReturn($this->createMock(ViewModelInterface::class));
+
+        $view->method('marshalResponse')
+            ->willReturn($this->createMock(ResponseInterface::class));
+
+        return $view;
+    }
+
+    public function testReturnNullWhenNotMatched()
+    {
+        $request = $this->requestFactory->createServerRequest('GET', '/', []);
+        $dispatcher = new Dispatcher((function () {
+            yield function () {
+                return false;
+            } => function () {
+            };
+        })(), $this->view, $this->stringRouter, $this->arrayRouter, $this->responseFactory);
+        $response = $dispatcher->dispatch($request);
+        $this->assertNull($response);
     }
 
     public function testActionScope()
     {
-        $request = ServerRequestFactory::fromGlobals();
-        $response = new Response();
+        $request = $this->requestFactory->createServerRequest('GET', '/');
         $actionScopeResult = [];
         $dispatcher = new Dispatcher(call_user_func(function () use (&$actionScopeResult) {
-            yield function () {return true;} => function () use (&$actionScopeResult) {
+            yield function () {
+                return true;
+            } => function () use (&$actionScopeResult) {
+                /** @var ClosureActionScope $this */
                 $actionScopeResult['request'] = $this->getRequest();
-                $actionScopeResult['response'] = $this->getResponse();
+                $actionScopeResult['responseFactory'] = $this->getResponseFactory();
+
+                return $this->getResponseFactory()->createResponse();
             };
-        }), $this->view, $this->stringRouter, $this->arrayRouter);
-        $result = $dispatcher->dispatch($request, $response);
-        $this->assertTrue($result->isDispatched());
-        $this->assertTrue($actionScopeResult['request'] instanceof ServerRequestInterface);
-        $this->assertTrue($actionScopeResult['response'] instanceof ResponseInterface);
+        }), $this->view, $this->stringRouter, $this->arrayRouter, $this->responseFactory);
+        $response = $dispatcher->dispatch($request);
+        $this->assertInstanceOf(ResponseInterface::class, $response);
+        $this->assertInstanceOf(ServerRequestInterface::class, $actionScopeResult['request']);
+        $this->assertInstanceOf(ResponseFactoryInterface::class, $actionScopeResult['responseFactory']);
     }
 
     public function testRoutingStringHandleAsRoute()
     {
-        $request = ServerRequestFactory::fromGlobals()->withUri(new Uri('http://example.com/foo/5'));
-        $response = new Response();
+        $request = $this->requestFactory->createServerRequest('GET', '/');
+        $request = $request->withUri($this->uriFactory->createUri('http://example.com/foo/5'));
 
-        $routing = call_user_func(function () {
+        $routing = (function () {
             yield '/foo/{id:[0-9]}' => function ($id) {
                 return (string) $id;
             };
             yield '/bar/{id:[0-9]}' => function ($id) {
                 return (string) $id;
             };
-        });
+        })();
 
-        $dispatcher = new Dispatcher($routing, $this->view, $this->stringRouter, $this->arrayRouter);
+        $dispatcher = new Dispatcher($routing, $this->view, $this->stringRouter, $this->arrayRouter, $this->responseFactory);
 
-        $result = $dispatcher->dispatch($request, $response);
-
-        $this->assertTrue($result->isDispatched());
-        $response = $result->getResponse();
-        $this->assertInstanceof(Response::class, $response);
+        $response = $dispatcher->dispatch($request);
+        $this->assertInstanceOf(ResponseInterface::class, $response);
         $this->assertSame('5', (string) $response->getBody());
 
         // not matched
-        $request = ServerRequestFactory::fromGlobals()->withUri(new Uri('http://example.com/bar/6'));
-        $response = new Response();
-        $result = $dispatcher->dispatch($request, $response);
-        $response = $result->getResponse();
-        $this->assertInstanceof(Response::class, $response);
+        $request = $this->requestFactory->createServerRequest('GET', '/')->withUri($this->uriFactory->createUri('http://example.com/bar/6'));
+        $response = $dispatcher->dispatch($request);
         $this->assertSame('6', (string) $response->getBody());
     }
 
     public function testRoutingKeyHandleStringAsPath()
     {
-        /** @var Response $request */
-        $request = ServerRequestFactory::fromGlobals();
-        $response = new Response();
+        /** @var ServerRequestInterface $request */
+        $request = $this->requestFactory->createServerRequest('GET', '/');
 
         $gen = function () {
-            yield ['GET' => '/foo'] => function () {return 'hello';};
+            yield ['GET' => '/foo'] => function () {
+                return 'hello';
+            };
         };
 
-        $dispatcher1 = new Dispatcher($gen(), $this->view, $this->stringRouter, $this->arrayRouter);
-        $dispatcher2 = new Dispatcher($gen(), $this->view, $this->stringRouter, $this->arrayRouter);
-        $dispatcher3 = new Dispatcher($gen(), $this->view, $this->stringRouter, $this->arrayRouter);
+        $dispatcher1 = new Dispatcher($gen(), $this->view, $this->stringRouter, $this->arrayRouter, $this->responseFactory);
+        $dispatcher2 = new Dispatcher($gen(), $this->view, $this->stringRouter, $this->arrayRouter, $this->responseFactory);
+        $dispatcher3 = new Dispatcher($gen(), $this->view, $this->stringRouter, $this->arrayRouter, $this->responseFactory);
 
-        $result = $dispatcher1->dispatch($request, $response);
-        $this->assertFalse($result->isDispatched());
+        $response = $dispatcher1->dispatch($request);
+        $this->assertNull($response);
 
-        $request = $request->withUri((new Uri())->withPath('/foo'))->withMethod('GET');
-        $result = $dispatcher2->dispatch($request, $response);
-        $this->assertTrue($result->isDispatched());
+        $request = $request->withUri($this->uriFactory->createUri()->withPath('/foo'))->withMethod('GET');
+        $response = $dispatcher2->dispatch($request);
         $this->assertSame('hello', (string) $response->getBody());
 
-        $request = $request->withUri((new Uri())->withPath('/foo'))->withMethod('POST');
-        $result = $dispatcher3->dispatch($request, $response);
-        $this->assertFalse($result->isDispatched());
+        $request = $request->withUri($this->uriFactory->createUri()->withPath('/foo'))->withMethod('POST');
+        $response = $dispatcher3->dispatch($request);
+        $this->assertNull($response);
 
         $gen = function () {
             yield ['GET' => '/foo',
                    'Header' => [
                        'User-Agent' => function ($headers) {
-                           if (!empty($headers) && strpos(current($headers), 'Mozilla') === 0) {
-                               return true;
-                           }
+                        if (! empty($headers) && strpos(current($headers), 'Mozilla') === 0) {
+                            return true;
+                        }
                        },
                    ],
-            ] => function () {return 'hello';};
+            ] => function () {
+                return 'hello';
+            };
         };
 
-        $dispatcher4 = new Dispatcher($gen(), $this->view, $this->stringRouter, $this->arrayRouter);
-        $dispatcher5 = new Dispatcher($gen(), $this->view, $this->stringRouter, $this->arrayRouter);
+        $dispatcher4 = new Dispatcher($gen(), $this->view, $this->stringRouter, $this->arrayRouter, $this->responseFactory);
+        $dispatcher5 = new Dispatcher($gen(), $this->view, $this->stringRouter, $this->arrayRouter, $this->responseFactory);
 
-        $request = $request->withUri((new Uri())->withPath('/foo'))->withMethod('GET');
-        $result = $dispatcher4->dispatch($request, $response);
-        $this->assertFalse($result->isDispatched());
+        $request = $request->withUri($this->uriFactory->createUri()->withPath('/foo'))->withMethod('GET');
+        $response = $dispatcher4->dispatch($request);
+        $this->assertNull($response);
 
-        $request = $request->withUri((new Uri())->withPath('/foo'))->withMethod('GET');
+        $request = $request->withUri($this->uriFactory->createUri()->withPath('/foo'))->withMethod('GET');
         $request = $request->withHeader('User-Agent', 'Mozilla/5.0');
-        $result = $dispatcher5->dispatch($request, $response);
-        $this->assertTrue($result->isDispatched());
+        $response = $dispatcher5->dispatch($request);
+        $this->assertInstanceOf(ResponseInterface::class, $response);
     }
 
     public function testRoutingKeyHandleClosureAsMatcher()
     {
-        $request = ServerRequestFactory::fromGlobals();
-        $response = new Response();
+        $request = $this->requestFactory->createServerRequest('GET', '/');
 
         $dispatcher = new Dispatcher(call_user_func(function () {
-            yield function () {return true;} => function () {return 'bar';};
-        }), $this->view, $this->stringRouter, $this->arrayRouter);
-        $result = $dispatcher->dispatch($request, $response);
-        $response = $result->getResponse();
-
+            yield function () {
+                return true;
+            } => function () {
+                return 'bar';
+            };
+        }), $this->view, $this->stringRouter, $this->arrayRouter, $this->responseFactory);
+        $response = $dispatcher->dispatch($request);
         $this->assertSame('bar', (string) $response->getBody());
     }
 
     public function testRouterResultArrayShouldPassAction()
     {
-        $request = ServerRequestFactory::fromGlobals();
-        $response = new Response();
+        $request = $this->requestFactory->createServerRequest('GET', '/');
 
         $dispatcher = new Dispatcher(call_user_func(function () {
-            yield function () {return ['var1', 'var2'];} => function ($var1, $var2) {return $var1.$var2;};
-        }), $this->view, $this->stringRouter, $this->arrayRouter);
-        $result = $dispatcher->dispatch($request, $response);
-        $response = $result->getResponse();
+            yield function () {
+                return ['var1', 'var2'];
+            } => function ($var1, $var2) {
+                return $var1.$var2;
+            };
+        }), $this->view, $this->stringRouter, $this->arrayRouter, $this->responseFactory);
+        $response = $dispatcher->dispatch($request);
         $this->assertSame('var1var2', (string) $response->getBody());
     }
 
     public function testRouterResultRouteMatchShouldPassAction()
     {
-        $request = ServerRequestFactory::fromGlobals();
-        $response = new Response();
+        $request = $this->requestFactory->createServerRequest('GET', '/');
 
         $dispatcher = new Dispatcher(call_user_func(function () {
-            yield function () {return new RoutingResult(true, ['var1', 'var2']);} => function ($var1, $var2) {return $var1.$var2;};
-        }), $this->view, $this->stringRouter, $this->arrayRouter);
-        $result = $dispatcher->dispatch($request, $response);
-        $response = $result->getResponse();
+            yield function () {
+                return new RoutingResult(true, ['var1', 'var2']);
+            } => function ($var1, $var2) {
+                return $var1.$var2;
+            };
+        }), $this->view, $this->stringRouter, $this->arrayRouter, $this->responseFactory);
+        $response = $dispatcher->dispatch($request);
         $this->assertSame('var1var2', (string) $response->getBody());
     }
 
@@ -189,116 +224,130 @@ class DispatcherTest extends \PHPUnit_Framework_TestCase
      */
     public function testRoutingKeyHandleUnexpected()
     {
-        $request = ServerRequestFactory::fromGlobals();
-        $response = new Response();
-
+        $request = $this->requestFactory->createServerRequest('GET', '/');
         (new Dispatcher(call_user_func(function () {
-            yield null => function () {return 'bar';};
-        }), $this->view, $this->stringRouter))->dispatch($request, $response);
-    }
-
-    public function testActionReturnResponseShouldBeUsed()
-    {
-        $request = ServerRequestFactory::fromGlobals();
-        $response = new Response();
-
-        $dispatcher = new Dispatcher(call_user_func(function () {
-            yield function () {return true;} => function () {
-                $response_new = new Response();
-
-                return $response_new;
+            yield null => function () {
+                return 'bar';
             };
-        }), $this->view, $this->stringRouter, $this->arrayRouter);
-        $result = $dispatcher->dispatch($request, $response);
-        $response2 = $result->getResponse();
-        $this->assertNotSame(spl_object_hash($response), spl_object_hash($response2));
+        }), $this->view, $this->stringRouter, $this->arrayRouter, $this->responseFactory))->dispatch($request);
     }
-    
+
     /**
-     * @expectedException \UnexpectedValueException
+     * @expectedException \TypeError
      */
-    public function testActionOfUndefinedTypeShouldRaiseException()
+    public function testActionOfUndefinedTypeShouldRaiseTypeError()
     {
-        $request = ServerRequestFactory::fromGlobals();
-        $response = new Response();
-        
+        $request = $this->requestFactory->createServerRequest('GET', '/');
+
         $dispatcher = new Dispatcher(call_user_func(function () {
-            yield function () {return true;} => 'string';
-        }), $this->view, $this->stringRouter, $this->arrayRouter);
-        
-        $dispatcher->dispatch($request, $response);
+            yield function () {
+                return true;
+            } => 'string';
+        }), $this->view, $this->stringRouter, $this->arrayRouter, $this->responseFactory);
+
+        $dispatcher->dispatch($request);
     }
-    
+
     public function testActionReturnIsIntUsedAsStatusCode()
     {
-        $request = ServerRequestFactory::fromGlobals();
-        $response = new Response();
+        $request = $this->requestFactory->createServerRequest('GET', '/');
 
         $dispatcher = new Dispatcher(call_user_func(function () {
-            yield function () {return true;} => function () {return $this->getResponse()->withStatus(503);};
-        }), $this->view, $this->stringRouter, $this->arrayRouter);
+            yield function () {
+                return true;
+            } => function () {
+                /** @var ClosureActionScope $this */
+                $response = $this->getResponseFactory()->createResponse();
+                return $response->withStatus(503);
+            };
+        }), $this->view, $this->stringRouter, $this->arrayRouter, $this->responseFactory);
 
-        $result = $dispatcher->dispatch($request, $response);
-        $response = $result->getResponse();
+        $response = $dispatcher->dispatch($request);
         $this->assertSame(503, $response->getStatusCode());
     }
 
+    /**
+     * @expectedException \RuntimeException
+     */
     public function testActionReturnUnkown()
     {
-        $request = ServerRequestFactory::fromGlobals();
-        $response = new Response();
+        $request = $this->requestFactory->createServerRequest('GET', '/');
         $dispatcher = new Dispatcher(call_user_func(function () {
-            yield function () {return true;} => function () {
-                $this->getResponse()->getBody()->write('a');
+            yield function () {
+                return true;
+            } => function () {
+                /** @var ClosureActionScope $this */
+                $response = $this->getResponseFactory()->createResponse();
+                $response->getBody()->write('a');
 
                 return true; // treat just as succes instead of false;
             };
-        }), $this->view, $this->stringRouter, $this->arrayRouter);
+        }), $this->view, $this->stringRouter, $this->arrayRouter, $this->responseFactory);
 
-        $result = $dispatcher->dispatch($request, $response);
-        $response = $result->getResponse();
-        $this->assertSame('a', (string) $response->getBody());
+        $dispatcher->dispatch($request);
     }
 
     public function testContinueWhenActionReturnIsFalse()
     {
-        $request = ServerRequestFactory::fromGlobals()->withUri(new Uri('/'));
-        $response = new Response();
+        $request = $this->requestFactory->createServerRequest('GET', '/');
+        $response = $this->responseFactory->createResponse();
         $response->getBody()->write('oh ');
 
-        $dispatcher = new Dispatcher(call_user_func(function () {
-            yield function () {return true;} => function () {return false;};
-            yield function () {return true;} => function () {return 'matched';};
-        }), $this->view, $this->stringRouter, $this->arrayRouter);
+        $responseFactory = new class ($response) implements ResponseFactoryInterface {
+            private $response;
+            public function __construct($response)
+            {
+                $this->response = $response;
+            }
+            public function createResponse(int $code = 200, string $reasonPhrase = ''): ResponseInterface
+            {
+                return $this->response;
+            }
+        };
 
-        $result = $dispatcher->dispatch($request, $response);
-        $response = $result->getResponse();
+        $dispatcher = new Dispatcher(call_user_func(function () {
+            yield function () {
+                return true;
+            } => function () {
+                return false;
+            };
+            yield function () {
+                return true;
+            } => function () {
+                return 'matched';
+            };
+        }), $this->view, $this->stringRouter, $this->arrayRouter, $responseFactory);
+
+        $response = $dispatcher->dispatch($request);
         $this->assertSame('oh matched', (string) $response->getBody());
     }
 
     public function testContinueWhenActionReturnHasActionContinueInterface()
     {
-        $request = ServerRequestFactory::fromGlobals()->withUri(new Uri('/'));
-        $response = new Response();
+        $request = $this->requestFactory->createServerRequest('GET', '/');
 
-        $actionContinue = $this->getMock(ActionContinueInterface::class);
+        $actionContinue = $this->createMock(ActionContinueInterface::class);
         $dispatcher = new Dispatcher(call_user_func(function () use ($actionContinue) {
-            yield function () {return true;} => function () use ($actionContinue) {return $actionContinue;};
-            yield function () {return true;} => function () {return 'bar';};
-        }), $this->view, $this->stringRouter, $this->arrayRouter);
+            yield function () {
+                return true;
+            } => function () use ($actionContinue) {
+                return $actionContinue;
+            };
+            yield function () {
+                return true;
+            } => function () {
+                return 'bar';
+            };
+        }), $this->view, $this->stringRouter, $this->arrayRouter, $this->responseFactory);
 
-        $result = $dispatcher->dispatch($request, $response);
-        $response = $result->getResponse();
+        $response = $dispatcher->dispatch($request);
 
         $this->assertSame('bar', (string) $response->getBody());
     }
 
     public function testValidationErrorShouldContinueRoutingAndHasError()
     {
-        $request = ServerRequestFactory::fromGlobals([
-            'REQUEST_METHOD' => 'POST',
-        ])->withUri(new Uri('/entry'));
-        $response = new Response();
+        $request = $this->requestFactory->createServerRequest('POST', '/entry');
 
         $dispatcher = new Dispatcher(call_user_func(function () {
             /* @var ServerRequestInterface $request */
@@ -311,20 +360,16 @@ class DispatcherTest extends \PHPUnit_Framework_TestCase
             yield '/entry' => function () use ($error) {
                 return current($error->getMessages());
             };
-        }), $this->view, $this->stringRouter, $this->arrayRouter);
+        }), $this->view, $this->stringRouter, $this->arrayRouter, $this->responseFactory);
 
-        $result = $dispatcher->dispatch($request, $response);
-        $response = $result->getResponse();
+        $response = $dispatcher->dispatch($request);
 
         $this->assertSame('foo', (string) $response->getBody());
     }
 
     public function testValidationThroughWhenNotMatchedRouting()
     {
-        $request = ServerRequestFactory::fromGlobals([
-            'REQUEST_METHOD' => 'GET',
-        ])->withUri(new Uri('/entry'));
-        $response = new Response();
+        $request = $this->requestFactory->createServerRequest('GET', '/entry');
 
         $dispatcher = new Dispatcher(call_user_func(function () {
             $error = (yield function (ServerRequestInterface $request) {
@@ -336,10 +381,9 @@ class DispatcherTest extends \PHPUnit_Framework_TestCase
             yield '/entry' => function () use ($error) {
                 return 'error is '.gettype($error);
             };
-        }), $this->view, $this->stringRouter, $this->arrayRouter);
+        }), $this->view, $this->stringRouter, $this->arrayRouter, $this->responseFactory);
 
-        $result = $dispatcher->dispatch($request, $response);
-        $response = $result->getResponse();
+        $response = $dispatcher->dispatch($request);
         $this->assertSame('error is NULL', (string) $response->getBody());
     }
 }

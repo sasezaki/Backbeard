@@ -10,6 +10,6 @@ foreach ($files as $file) {
     }
 }
 
-if (!isset($loader)) {
+if (! isset($loader)) {
     throw new RuntimeException('vendor/autoload.php could not be found. Did you install via composer?');
 }

@@ -1,28 +1,32 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Backbeard;
 
-use Psr\Http\Message\ServerRequestInterface as Request;
-use Psr\Http\Message\ResponseInterface as Response;
+use Psr\Http\Message\ResponseFactoryInterface;
+use Psr\Http\Message\ServerRequestInterface;
 
 class ClosureActionScope
 {
+    /** @var ServerRequestInterface */
     private $request;
-    private $response;
+    /** @var ResponseFactoryInterface */
+    private $responseFactory;
 
-    public function __construct(Request $request, Response $response)
+    public function __construct(ServerRequestInterface $request, ResponseFactoryInterface $responseFactory)
     {
         $this->request = $request;
-        $this->response = $response;
+        $this->responseFactory = $responseFactory;
     }
 
-    public function getRequest()
+    public function getRequest() : ServerRequestInterface
     {
         return $this->request;
     }
 
-    public function getResponse()
+    public function getResponseFactory() : ResponseFactoryInterface
     {
-        return $this->response;
+        return $this->responseFactory;
     }
 }

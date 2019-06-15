@@ -3,8 +3,9 @@
 namespace BackbeardTest\Router;
 
 use Backbeard\Router\StringRouter;
+use PHPUnit\Framework\TestCase;
 
-class StringRouterTest extends \PHPUnit_Framework_TestCase
+class StringRouterTest extends TestCase
 {
     /**
      * @expectedException \LogicException
