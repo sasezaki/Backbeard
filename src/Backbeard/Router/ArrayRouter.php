@@ -4,18 +4,21 @@ declare(strict_types=1);
 
 namespace Backbeard\Router;
 
-use Psr\Http\Message\ServerRequestInterface as Request;
+use Psr\Http\Message\ServerRequestInterface;
 
 class ArrayRouter implements ArrayRouterInterface
 {
-    private $stringRouter;
+    private StringRouterInterface $stringRouter;
 
     public function __construct(StringRouterInterface $stringRouter)
     {
         $this->stringRouter = $stringRouter;
     }
 
-    public function match(array $route, Request $request) : ?array
+    /**
+     * @inheritDoc
+     */
+    public function match(array $route, ServerRequestInterface $request) : ?array
     {
         $httpMethod = key($route);
         $stringRoute = current($route);

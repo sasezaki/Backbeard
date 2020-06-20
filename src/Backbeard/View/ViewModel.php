@@ -4,29 +4,17 @@ namespace Backbeard\View;
 
 class ViewModel implements ViewModelInterface
 {
-    /**
-     * @var int
-     */
-    private $code;
+    private int $code;
+
+    private string $reasonPhrase = '';
+
+    /** @var array<string, mixed> */
+    private array $variables;
+
+    private string $template;
 
     /**
-     * @var string
-     */
-    private $reasonPhrase = '';
-
-    /**
-     * @var array
-     */
-    private $variables;
-
-    /**
-     * @var string
-     */
-    private $template;
-
-    /**
-     * @param array $variables
-     * @param string $template
+     * @param array<string, mixed> $variables
      */
     public function __construct(array $variables, string $template, int $code = 200)
     {
@@ -45,6 +33,9 @@ class ViewModel implements ViewModelInterface
         return $this->reasonPhrase;
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function getVariables() : array
     {
         return $this->variables;

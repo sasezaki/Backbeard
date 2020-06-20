@@ -25,7 +25,9 @@
     "require-dev": {
         "laminas/laminas-diactoros": "^2",
         "phpunit/phpunit": "^9",
-        "laminas/laminas-coding-standard": "~1.0.0"
+        "laminas/laminas-coding-standard": "~1.0.0",
+        "phpstan/phpstan": "^0.12.29",
+        "phpstan/phpstan-phpunit": "^0.12.11"
     },
     "autoload": {
         "psr-4": {

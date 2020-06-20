@@ -13,14 +13,17 @@ use FastRoute\RouteParser\Std as RouteParser;
 
 class StringRouter implements StringRouterInterface
 {
-    private $routeParser;
+    private RouteParser $routeParser;
 
     public function __construct(RouteParser $routeParser)
     {
         $this->routeParser = $routeParser;
     }
 
-    public function match($route, $uri) : ?array
+    /**
+     * @inheritDoc
+     */
+    public function match(string $route, string $uri) : ?array
     {
         $routeData = $this->routeParser->parse($route);
         list($regex, $params) = $this->buildRegexForRoute(current($routeData));

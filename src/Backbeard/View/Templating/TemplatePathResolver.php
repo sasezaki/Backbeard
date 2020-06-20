@@ -6,14 +6,15 @@ use Backbeard\RoutingResult;
 
 class TemplatePathResolver implements TemplatePathResolverInterface
 {
-    private $suffix = '.phtml';
+    private string $suffix = '.phtml';
 
-    /**
-     * @return string
-     */
-    public function resolve(RoutingResult $routingResult)
+    public function resolve(RoutingResult $routingResult) : string
     {
         $name = $routingResult->getMatchedRouteName();
+        if ($name === null) {
+            throw new \LogicException('route not matched');
+        }
+
         if (strpos(strrev($name), '/') === 0) {
             return $name.'index'.$this->suffix;
         } else {
@@ -21,7 +22,7 @@ class TemplatePathResolver implements TemplatePathResolverInterface
         }
     }
 
-    public function setSuffix($suffix)
+    public function setSuffix(string $suffix) : void
     {
         $this->suffix = $suffix;
     }

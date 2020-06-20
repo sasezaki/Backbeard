@@ -6,5 +6,8 @@ namespace Backbeard\Router;
 
 interface StringRouterInterface
 {
-    public function match($route, $uri) : ?array;
+    /**
+     * @return null|array<string, string>
+     */
+    public function match(string $route, string $uri) : ?array;
 }

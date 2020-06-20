@@ -17,30 +17,15 @@ use Backbeard\Router\ArrayRouterInterface;
 
 class Dispatcher implements DispatcherInterface
 {
-    /**
-     * @var Generator
-     */
-    private $routing;
+    private Generator $routing;
 
-    /**
-     * @var ViewInterface
-     */
-    protected $view;
+    protected ViewInterface $view;
 
-    /**
-     * @var StringRouterInterface
-     */
-    protected $stringRouter;
+    protected StringRouterInterface $stringRouter;
 
-    /**
-     * @var ArrayRouterInterface
-     */
-    protected $arrayRouter;
+    protected ArrayRouterInterface $arrayRouter;
 
-    /**
-     * @var ResponseFactoryInterface
-     */
-    private $responseFactory;
+    private ResponseFactoryInterface $responseFactory;
 
     public function __construct(Generator $routing, ViewInterface $view, StringRouterInterface $stringRouter, ArrayRouterInterface $arrayRouter = null, ResponseFactoryInterface $responseFactory)
     {
@@ -119,6 +104,9 @@ class Dispatcher implements DispatcherInterface
         return $routingResult;
     }
 
+    /**
+     * @return null|array<string, string>
+     */
     protected function dispatchRoutingByType($route, ServerRequestInterface $request) : ?array
     {
         switch (gettype($route)) {
