@@ -10,7 +10,7 @@ class DispatchResult implements DispatchResultInterface
     private bool $dispatched;
     private ?ResponseInterface $response = null;
 
-    public function __construct(bool $dispatched, $response = null)
+    public function __construct(bool $dispatched, ResponseInterface $response = null)
     {
         $this->dispatched = $dispatched;
         $this->response = $response;

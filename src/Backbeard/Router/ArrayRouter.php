@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Backbeard\Router;
 
-use Psr\Http\Message\ServerRequestInterface as Request;
+use Psr\Http\Message\ServerRequestInterface;
 
 class ArrayRouter implements ArrayRouterInterface
 {
@@ -15,7 +15,10 @@ class ArrayRouter implements ArrayRouterInterface
         $this->stringRouter = $stringRouter;
     }
 
-    public function match(array $route, Request $request) : ?array
+    /**
+     * @param array<string, mixed>
+     */
+    public function match(array $route, ServerRequestInterface $request) : ?array
     {
         $httpMethod = key($route);
         $stringRoute = current($route);
