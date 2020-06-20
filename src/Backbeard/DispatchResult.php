@@ -2,13 +2,13 @@
 
 namespace Backbeard;
 
-use Psr\Http\Message\ResponseInterface as Response;
+use Psr\Http\Message\ResponseInterface;
 use LogicException;
 
 class DispatchResult implements DispatchResultInterface
 {
     private bool $dispatched;
-    private $response;
+    private ?ResponseInterface $response = null;
 
     public function __construct($dispatched, $response = null)
     {
@@ -24,12 +24,9 @@ class DispatchResult implements DispatchResultInterface
         return $this->dispatched;
     }
 
-    /**
-     * @return Response;
-     */
-    public function getResponse()
+    public function getResponse() : ResponseInterface
     {
-        if ($this->response instanceof Response) {
+        if ($this->response instanceof ResponseInterface) {
             return $this->response;
         }
         throw new LogicException("Don't call when dispatch return false");    
