@@ -12,9 +12,12 @@ jobs:
     name: phpstan static code analysis
     runs-on: ubuntu-latest
     steps:
+      - name: "Checkout"
       - uses: actions/checkout@v2
-      - name: Setup PHP
-        run: # custom PHP installation
+
+      - name: "Install PHP"
+        uses: "shivammathur/setup-php@v2"
+
       - run: |
           composer install # install your apps dependencies
           composer require staabm/annotate-pull-request-from-checkstyle # install cs2pr
