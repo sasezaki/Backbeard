@@ -15,9 +15,6 @@ class ArrayRouter implements ArrayRouterInterface
         $this->stringRouter = $stringRouter;
     }
 
-    /**
-     * @param array<string, mixed>
-     */
     public function match(array $route, ServerRequestInterface $request) : ?array
     {
         $httpMethod = key($route);

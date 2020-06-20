@@ -10,7 +10,7 @@ interface ViewModelInterface
 
     public function getReasonPhrase() : string;
 
-    /** @retun array<string, mixed> */
+    /** @return array<string, mixed> */
     public function getVariables() : array;
 
     public function getTemplate() : string;
