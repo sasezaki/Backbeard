@@ -210,7 +210,7 @@ class DispatcherTest extends TestCase
 
         $dispatcher = new Dispatcher(call_user_func(function () {
             yield function () {
-                return new RoutingResult(true, ['var1' => 'var1', 'var2' => 'var2']);
+                return new RoutingResult(true, ['var1', 'var2']);
             } => function ($var1, $var2) {
                 return $var1.$var2;
             };
