@@ -6,7 +6,7 @@ namespace Backbeard;
 
 class ValidationError implements ActionContinueInterface
 {
-    private $messages;
+    private iterable $messages;
 
     public function __construct(iterable $messages)
     {

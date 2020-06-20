@@ -7,7 +7,7 @@ use LogicException;
 
 class DispatchResult implements DispatchResultInterface
 {
-    private $dispatched;
+    private bool $dispatched;
     private $response;
 
     public function __construct($dispatched, $response = null)

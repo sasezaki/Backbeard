@@ -9,24 +9,17 @@ namespace Backbeard;
  */
 class RoutingResult
 {
-    /**
-     * @var bool
-     */
-    protected $matched;
+    protected bool $matched;
 
     /**
      * Match parameters.
-     *
-     * @var array
      */
-    protected $params = [];
+    protected array $params = [];
 
     /**
      * Matched route name.
-     *
-     * @var string
      */
-    protected $matchedRouteName;
+    protected string $matchedRouteName;
 
     /**
      * Create a RouteMatch with given parameters.

@@ -4,25 +4,13 @@ namespace Backbeard\View;
 
 class ViewModel implements ViewModelInterface
 {
-    /**
-     * @var int
-     */
-    private $code;
+    private int $code;
 
-    /**
-     * @var string
-     */
-    private $reasonPhrase = '';
+    private string $reasonPhrase = '';
 
-    /**
-     * @var array
-     */
-    private $variables;
+    private array $variables;
 
-    /**
-     * @var string
-     */
-    private $template;
+    private string $template;
 
     /**
      * @param array $variables

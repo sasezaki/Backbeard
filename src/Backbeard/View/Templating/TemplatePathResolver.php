@@ -6,7 +6,7 @@ use Backbeard\RoutingResult;
 
 class TemplatePathResolver implements TemplatePathResolverInterface
 {
-    private $suffix = '.phtml';
+    private string $suffix = '.phtml';
 
     /**
      * @return string
