@@ -23,7 +23,7 @@ class TemplatingViewTest extends TestCase
     private $stringRouter;
     private $arrayRouter;
 
-    public function setUp()
+    public function setUp() : void
     {
         $this->responseFactory = new ResponseFactory();
         $this->view = new SfpStreamView(new BaseStreamView(__DIR__.'/../../_files/views'), $this->responseFactory);

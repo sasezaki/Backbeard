@@ -35,7 +35,7 @@ class DispatcherTest extends TestCase
     /** @var ResponseFactoryInterface */
     private $responseFactory;
 
-    public function setUp()
+    public function setUp() : void
     {
         $this->view = $this->getViewMock();
         $this->stringRouter = $stringRouter = new StringRouter(new \FastRoute\RouteParser\Std());
@@ -219,11 +219,9 @@ class DispatcherTest extends TestCase
         $this->assertSame('var1var2', (string) $response->getBody());
     }
 
-    /**
-     * @expectedException InvalidArgumentException
-     */
-    public function testRoutingKeyHandleUnexpected()
+    public function testRoutingKeyHandleUnexpected() : void
     {
+        $this->expectException(\InvalidArgumentException::class);
         $request = $this->requestFactory->createServerRequest('GET', '/');
         (new Dispatcher(call_user_func(function () {
             yield null => function () {
@@ -232,11 +230,10 @@ class DispatcherTest extends TestCase
         }), $this->view, $this->stringRouter, $this->arrayRouter, $this->responseFactory))->dispatch($request);
     }
 
-    /**
-     * @expectedException \TypeError
-     */
-    public function testActionOfUndefinedTypeShouldRaiseTypeError()
+    public function testActionOfUndefinedTypeShouldRaiseTypeError() : void
     {
+        $this->expectException(\TypeError::class);
+
         $request = $this->requestFactory->createServerRequest('GET', '/');
 
         $dispatcher = new Dispatcher(call_user_func(function () {
@@ -271,6 +268,8 @@ class DispatcherTest extends TestCase
      */
     public function testActionReturnUnkown()
     {
+        $this->expectException(\RuntimeException::class);
+
         $request = $this->requestFactory->createServerRequest('GET', '/');
         $dispatcher = new Dispatcher(call_user_func(function () {
             yield function () {
