@@ -2,15 +2,11 @@
 
 namespace Backbeard;
 
+use Psr\Http\Message\ResponseInterface;
+
 interface DispatchResultInterface
 {
-    /**
-     * @return bool
-     */
-    public function isDispatched();
+    public function isDispatched() : bool;
 
-    /**
-     * @return \Psr\Http\Message\ResponseInterface
-     */
-    public function getResponse();
+    public function getResponse() : ResponseInterface;
 }

@@ -9,8 +9,8 @@ use Psr\Http\Message\ServerRequestInterface;
 
 class ClosureActionScope
 {
-    private \Psr\Http\Message\ServerRequestInterface $request;
-    private \Psr\Http\Message\ResponseFactoryInterface $responseFactory;
+    private ServerRequestInterface $request;
+    private ResponseFactoryInterface $responseFactory;
 
     public function __construct(ServerRequestInterface $request, ResponseFactoryInterface $responseFactory)
     {

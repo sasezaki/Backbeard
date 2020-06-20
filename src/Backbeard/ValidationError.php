@@ -6,8 +6,12 @@ namespace Backbeard;
 
 class ValidationError implements ActionContinueInterface
 {
+    /** @var iterable<string> */
     private iterable $messages;
 
+    /**
+     * @param iterable<string> $messages
+     */
     public function __construct(iterable $messages)
     {
         $this->messages = $messages;

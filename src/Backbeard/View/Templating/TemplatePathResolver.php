@@ -8,10 +8,7 @@ class TemplatePathResolver implements TemplatePathResolverInterface
 {
     private string $suffix = '.phtml';
 
-    /**
-     * @return string
-     */
-    public function resolve(RoutingResult $routingResult)
+    public function resolve(RoutingResult $routingResult) : string
     {
         $name = $routingResult->getMatchedRouteName();
         if (strpos(strrev($name), '/') === 0) {
@@ -21,7 +18,7 @@ class TemplatePathResolver implements TemplatePathResolverInterface
         }
     }
 
-    public function setSuffix($suffix)
+    public function setSuffix($suffix) : void 
     {
         $this->suffix = $suffix;
     }

@@ -8,13 +8,13 @@ class ViewModel implements ViewModelInterface
 
     private string $reasonPhrase = '';
 
+    /** @var array<string, mixed> */
     private array $variables;
 
     private string $template;
 
     /**
-     * @param array $variables
-     * @param string $template
+     * @param array<string, mixed> $variables
      */
     public function __construct(array $variables, string $template, int $code = 200)
     {
@@ -33,6 +33,9 @@ class ViewModel implements ViewModelInterface
         return $this->reasonPhrase;
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function getVariables() : array
     {
         return $this->variables;

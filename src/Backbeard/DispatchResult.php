@@ -10,16 +10,13 @@ class DispatchResult implements DispatchResultInterface
     private bool $dispatched;
     private ?ResponseInterface $response = null;
 
-    public function __construct($dispatched, $response = null)
+    public function __construct(bool $dispatched, $response = null)
     {
         $this->dispatched = $dispatched;
         $this->response = $response;
     }
 
-    /**
-     * @return bool
-     */
-    public function isDispatched()
+    public function isDispatched() : bool
     {
         return $this->dispatched;
     }
