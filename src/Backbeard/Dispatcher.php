@@ -1,5 +1,4 @@
 <?php
-
 declare(strict_types=1);
 
 namespace Backbeard;
@@ -9,12 +8,19 @@ use InvalidArgumentException;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
-use Psr\Http\Server\RequestHandlerInterface;
 use Backbeard\View\ViewInterface;
 use Backbeard\View\ViewModelInterface;
 use Backbeard\Router\StringRouterInterface;
 use Backbeard\Router\ArrayRouterInterface;
 
+/**
+ * @psalm-type ReturnOfRouteByCallable = bool|RoutingResult
+ * @psalm-type ParamOfRoute = string|array<string, mixed>|callable(ServerRequestInterface):ReturnOfRouteByCallable
+ *
+ * callable action's signature
+ * @psalm-type ReturnOfAction = bool|string|array<string, mixed>|ViewModelInterface|ResponseInterface|ActionContinueInterface
+ * @psalm-type ParamOfActionWithCallable = callable(string ...):ReturnOfAction | callable(RoutingResult):ReturnOfAction
+ */
 class Dispatcher implements DispatcherInterface
 {
     private Generator $routing;
@@ -27,7 +33,7 @@ class Dispatcher implements DispatcherInterface
 
     private ResponseFactoryInterface $responseFactory;
 
-    public function __construct(Generator $routing, ViewInterface $view, StringRouterInterface $stringRouter, ArrayRouterInterface $arrayRouter = null, ResponseFactoryInterface $responseFactory)
+    public function __construct(Generator $routing, ViewInterface $view, StringRouterInterface $stringRouter, ArrayRouterInterface $arrayRouter, ResponseFactoryInterface $responseFactory)
     {
         $this->routing = $routing;
         $this->view = $view;
@@ -73,6 +79,9 @@ class Dispatcher implements DispatcherInterface
         return null;
     }
 
+    /**
+     * @psalm-param ParamOfRoute $route
+     */
     protected function dispatchRouting($route, ServerRequestInterface $request) : ?RoutingResult
     {
         if (is_callable($route)) {
@@ -105,6 +114,7 @@ class Dispatcher implements DispatcherInterface
     }
 
     /**
+     * @param string|array<string, mixed> $route
      * @return null|array<string, string>
      */
     protected function dispatchRoutingByType($route, ServerRequestInterface $request) : ?array
@@ -119,6 +129,10 @@ class Dispatcher implements DispatcherInterface
         }
     }
 
+    /**
+     * @psalm-param ParamOfActionWithCallable $action
+     * @psalm-return ReturnOfAction
+     */
     protected function callAction(RoutingResult $routingResult, callable $action)
     {
         $params = $routingResult->getParams();
@@ -127,6 +141,9 @@ class Dispatcher implements DispatcherInterface
         return $actionReturn;
     }
 
+    /**
+     * @psalm-param bool|string|array<string, mixed>|ViewModelInterface|ResponseInterface $actionReturn
+     */
     protected function handleActionReturn(RoutingResult $routingResult, $actionReturn) : ResponseInterface
     {
         if (is_string($actionReturn)) {

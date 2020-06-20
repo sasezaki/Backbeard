@@ -20,6 +20,8 @@ class RoutingResult
 
     /**
      * Create a RouteMatch with given parameters.
+     *
+     * @param array<string, mixed> $params
      */
     public function __construct(bool $matched, array $params = [])
     {
@@ -50,6 +52,8 @@ class RoutingResult
 
     /**
      * Get all parameters.
+     *
+     * @return array<string, mixed>
      */
     public function getParams() : array
     {
