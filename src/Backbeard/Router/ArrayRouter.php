@@ -8,7 +8,7 @@ use Psr\Http\Message\ServerRequestInterface as Request;
 
 class ArrayRouter implements ArrayRouterInterface
 {
-    private $stringRouter;
+    private StringRouterInterface $stringRouter;
 
     public function __construct(StringRouterInterface $stringRouter)
     {

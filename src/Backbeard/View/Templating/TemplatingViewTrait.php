@@ -8,15 +8,9 @@ use Backbeard\View\ViewModelInterface;
 
 trait TemplatingViewTrait
 {
-    /**
-     * @var TemplatePathResolverInterface
-     */
-    private $templatePathResolver;
+    private ?TemplatePathResolverInterface $templatePathResolver = null;
 
-    /**
-     * @return TemplatePathResolverInterface
-     */
-    public function getTemplatePathResolver()
+    public function getTemplatePathResolver() : TemplatePathResolverInterface
     {
         if (! $this->templatePathResolver) {
             $this->templatePathResolver = new TemplatePathResolver();

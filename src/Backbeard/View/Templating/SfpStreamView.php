@@ -12,8 +12,8 @@ class SfpStreamView implements ViewInterface
 {
     use TemplatingViewTrait;
 
-    private $streamView;
-    private $responseFactory;
+    private StreamView $streamView;
+    private ResponseFactoryInterface $responseFactory;
 
     public function __construct(StreamView $streamView, ResponseFactoryInterface $responseFactory)
     {

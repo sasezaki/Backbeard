@@ -13,7 +13,7 @@ use FastRoute\RouteParser\Std as RouteParser;
 
 class StringRouter implements StringRouterInterface
 {
-    private $routeParser;
+    private RouteParser $routeParser;
 
     public function __construct(RouteParser $routeParser)
     {
