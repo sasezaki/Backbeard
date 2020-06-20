@@ -41,9 +41,9 @@ class DispatcherTest extends TestCase
         $this->stringRouter = $stringRouter = new StringRouter(new \FastRoute\RouteParser\Std());
         $this->arrayRouter = new ArrayRouter($stringRouter);
 
-        $this->requestFactory = new \Zend\Diactoros\ServerRequestFactory();
-        $this->uriFactory = new \Zend\Diactoros\UriFactory;
-        $this->responseFactory = new \Zend\Diactoros\ResponseFactory;
+        $this->requestFactory = new \Laminas\Diactoros\ServerRequestFactory();
+        $this->uriFactory = new \Laminas\Diactoros\UriFactory;
+        $this->responseFactory = new \Laminas\Diactoros\ResponseFactory;
     }
 
     private function getViewMock() : MockObject

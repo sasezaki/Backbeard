@@ -9,9 +9,9 @@ use Backbeard\Router\StringRouter;
 use Backbeard\Router\ArrayRouter;
 
 use Psr\Http\Message\ResponseInterface;
-use Zend\Diactoros\ResponseFactory;
-use Zend\Diactoros\ServerRequestFactory;
-use Zend\Diactoros\Uri;
+use Laminas\Diactoros\ResponseFactory;
+use Laminas\Diactoros\ServerRequestFactory;
+use Laminas\Diactoros\Uri;
 use SfpStreamView\View as BaseStreamView;
 
 use PHPUnit\Framework\TestCase;

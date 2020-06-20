@@ -1,7 +1,7 @@
 <?php
 
-use Zend\Diactoros\ServerRequestFactory;
-use Zend\Diactoros\Response;
+use Laminas\Diactoros\ServerRequestFactory;
+use Laminas\Diactoros\Response;
 use Psr\Http\Message\RequestInterface as Request;
 
 use Backbeard\RoutingResult;
