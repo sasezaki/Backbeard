@@ -9,9 +9,9 @@ use Backbeard\Router\StringRouter;
 use Backbeard\Router\ArrayRouter;
 
 use Psr\Http\Message\ResponseInterface;
-use Zend\Diactoros\ResponseFactory;
-use Zend\Diactoros\ServerRequestFactory;
-use Zend\Diactoros\Uri;
+use Laminas\Diactoros\ResponseFactory;
+use Laminas\Diactoros\ServerRequestFactory;
+use Laminas\Diactoros\Uri;
 use SfpStreamView\View as BaseStreamView;
 
 use PHPUnit\Framework\TestCase;
@@ -23,7 +23,7 @@ class TemplatingViewTest extends TestCase
     private $stringRouter;
     private $arrayRouter;
 
-    public function setUp()
+    public function setUp() : void
     {
         $this->responseFactory = new ResponseFactory();
         $this->view = new SfpStreamView(new BaseStreamView(__DIR__.'/../../_files/views'), $this->responseFactory);
