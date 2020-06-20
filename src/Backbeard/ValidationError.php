@@ -17,6 +17,9 @@ class ValidationError implements ActionContinueInterface
         $this->messages = $messages;
     }
 
+    /**
+     * @return iterable<string>
+     */
     public function getMessages() : iterable
     {
         return $this->messages;

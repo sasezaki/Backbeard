@@ -15,6 +15,9 @@ class ArrayRouter implements ArrayRouterInterface
         $this->stringRouter = $stringRouter;
     }
 
+    /**
+     * @inheritDoc
+     */
     public function match(array $route, ServerRequestInterface $request) : ?array
     {
         $httpMethod = key($route);

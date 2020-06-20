@@ -20,7 +20,10 @@ class StringRouter implements StringRouterInterface
         $this->routeParser = $routeParser;
     }
 
-    public function match($route, $uri) : ?array
+    /**
+     * @inheritDoc
+     */
+    public function match(string $route, string $uri) : ?array
     {
         $routeData = $this->routeParser->parse($route);
         list($regex, $params) = $this->buildRegexForRoute(current($routeData));

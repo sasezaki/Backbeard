@@ -104,6 +104,9 @@ class Dispatcher implements DispatcherInterface
         return $routingResult;
     }
 
+    /**
+     * @return null|array<string, string>
+     */
     protected function dispatchRoutingByType($route, ServerRequestInterface $request) : ?array
     {
         switch (gettype($route)) {

@@ -11,6 +11,10 @@ class TemplatePathResolver implements TemplatePathResolverInterface
     public function resolve(RoutingResult $routingResult) : string
     {
         $name = $routingResult->getMatchedRouteName();
+        if ($name === null) {
+            throw new \LogicException('route not matched');
+        }
+
         if (strpos(strrev($name), '/') === 0) {
             return $name.'index'.$this->suffix;
         } else {
@@ -18,7 +22,7 @@ class TemplatePathResolver implements TemplatePathResolverInterface
         }
     }
 
-    public function setSuffix($suffix) : void 
+    public function setSuffix(string $suffix) : void
     {
         $this->suffix = $suffix;
     }

@@ -18,6 +18,9 @@ trait TemplatingViewTrait
         return $this->templatePathResolver;
     }
 
+    /**
+     * @param array<string, mixed> $vars
+     */
     public function marshalViewModel(RoutingResult $routingResult, array $vars) : ViewModelInterface
     {
         $template = $this->getTemplatePathResolver()->resolve($routingResult);
