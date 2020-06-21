@@ -14,15 +14,21 @@ use Backbeard\Router\StringRouterInterface;
 use Backbeard\Router\ArrayRouterInterface;
 
 /**
- * @psalm-type ReturnOfRouteByCallable = bool|RoutingResult
- * @psalm-type ParamOfRoute = string|array<string, mixed>|callable(ServerRequestInterface):ReturnOfRouteByCallable
+ * Route
+ * @psalm-type TCallableRoute = callable(ServerRequestInterface):bool|RoutingResult
+ * @psalm-type TRoute = string|array<string, mixed>|TCallableRoute
  *
- * callable action's signature
- * @psalm-type ReturnOfAction = bool|string|array<string, mixed>|ViewModelInterface|ResponseInterface|ActionContinueInterface
- * @psalm-type ParamOfActionWithCallable = callable(string ...):ReturnOfAction | callable(RoutingResult):ReturnOfAction
+ * Action
+ * @psalm-type TReturnOfAction = bool|string|array<string, mixed>|ViewModelInterface|ResponseInterface|ActionContinueInterface
+ * @psalm-type TAction = callable(string ...):TReturnOfAction | callable(RoutingResult):TReturnOfAction
+ *
+ * @psalm-type TRouting = Generator<TRoute, TAction, ActionContinueInterface, null>
  */
 class Dispatcher implements DispatcherInterface
 {
+    /**
+     * @psalm-var TRouting
+     */
     private Generator $routing;
 
     protected ViewInterface $view;
@@ -33,6 +39,9 @@ class Dispatcher implements DispatcherInterface
 
     private ResponseFactoryInterface $responseFactory;
 
+    /**
+     * @psalm-param TRouting $routing
+     */
     public function __construct(Generator $routing, ViewInterface $view, StringRouterInterface $stringRouter, ArrayRouterInterface $arrayRouter, ResponseFactoryInterface $responseFactory)
     {
         $this->routing = $routing;
@@ -80,12 +89,12 @@ class Dispatcher implements DispatcherInterface
     }
 
     /**
-     * @psalm-param ParamOfRoute $route
+     * @psalm-param TRoute $route
      */
     protected function dispatchRouting($route, ServerRequestInterface $request) : ?RoutingResult
     {
         if (is_callable($route)) {
-            $routingReturn = $route($request);
+            $routingReturn = $this->dispatchRoutingByCallable($route, $request);
             if ($routingReturn === false) {
                 return null;
             }
@@ -96,21 +105,41 @@ class Dispatcher implements DispatcherInterface
             }
         }
 
+        return $this->handleRoutingReturn($routingReturn);
+    }
+
+    /**
+     * @psalm-param TCallableRoute $route
+     * @psalm-return bool|RoutingResult
+     */
+    private function dispatchRoutingByCallable(callable $route, ServerRequestInterface $request)
+    {
+        return $route($request);
+    }
+
+    /**
+     * @psalm-param bool|array<string, string>|RoutingResult $routingReturn
+     */
+    private function handleRoutingReturn($routingReturn) : RoutingResult
+    {
         if ($routingReturn === true) {
             $routingResult = new RoutingResult(true, []);
             $routingResult->setMatchedRouteName($request->getUri()->getPath());
-        } elseif (is_array($routingReturn)) {
+            return $routingResult;
+        }
+
+        if (is_array($routingReturn)) {
             $params = $routingReturn;
             $routingResult = new RoutingResult(true, $params);
             $routingResult->setMatchedRouteName($request->getUri()->getPath());
-        } elseif ($routingReturn instanceof RoutingResult) {
-            return $routingReturn;
-        } else {
-            throw new \UnexpectedvalueException('Invalid router type is passed');
+            return $routingResult;
         }
 
+        if ($routingReturn instanceof RoutingResult) {
+            return $routingReturn;
+        }
 
-        return $routingResult;
+        throw new \UnexpectedvalueException('Invalid router type is passed');
     }
 
     /**
@@ -130,8 +159,8 @@ class Dispatcher implements DispatcherInterface
     }
 
     /**
-     * @psalm-param ParamOfActionWithCallable $action
-     * @psalm-return ReturnOfAction
+     * @psalm-param TAction $action
+     * @psalm-return TReturnOfAction
      */
     protected function callAction(RoutingResult $routingResult, callable $action)
     {
